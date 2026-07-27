@@ -13,16 +13,21 @@ def init_db(app):
     
     # Handle SQLite path mapping to make it local to the backend folder
     if db_url.startswith('sqlite:///'):
-        db_file = db_url.replace('sqlite:///', '')
-        if not os.path.isabs(db_file):
-            backend_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-            # Create a folder for the db if it's placed inside a subfolder or instance
-            db_path = os.path.join(backend_dir, db_file)
-            db_dir = os.path.dirname(db_path)
-            if db_dir and not os.path.exists(db_dir):
-                os.makedirs(db_dir, exist_ok=True)
-            db_url = f"sqlite:///{db_path}"
-            
+      db_file = db_url.replace('sqlite:///', '')
+      if not os.path.isabs(db_file):
+        backend_dir = os.path.abspath(
+            os.path.dirname(os.path.dirname(__file__))
+        )
+        # Create a folder for the db if it's placed inside a subfolder or instance
+        db_path = os.path.join(backend_dir, db_file)
+        db_dir = os.path.dirname(db_path)
+        if db_dir and not os.path.exists(db_dir):
+          os.makedirs(db_dir, exist_ok=True)
+        db_url = f'sqlite:///{db_path}'
+    elif db_url.startswith('postgres://'):
+      # SQLAlchemy 1.4+ and 2.0+ deprecate postgres:// and require postgresql://
+      db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
