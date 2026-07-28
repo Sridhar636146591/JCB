@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { authService } from './services/auth';
 import Layout from './components/Layout';
@@ -10,6 +10,7 @@ import Fuel from './pages/Fuel';
 import Reports from './pages/Reports';
 import Calculator from './pages/Calculator';
 import JobCalculator from './pages/JobCalculator';
+import SplashScreen from './components/SplashScreen';
 import './App.css';
 
 // Guard for protected pages (Owner panel)
@@ -25,7 +26,14 @@ const LoginRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const App: React.FC = () => {
+  const [isSplashActive, setIsSplashActive] = useState(true);
+
+  if (isSplashActive) {
+    return <SplashScreen onFinished={() => setIsSplashActive(false)} />;
+  }
+
   return (
+
     <BrowserRouter>
       <Routes>
         {/* Public Login Route */}
