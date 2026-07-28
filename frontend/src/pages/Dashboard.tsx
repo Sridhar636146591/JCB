@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -9,7 +10,11 @@ import {
   Users,
   Fuel,
   ArrowUpRight,
-  RefreshCw
+  RefreshCw,
+  UserCheck,
+  FileText,
+  Calculator,
+  Truck
 } from 'lucide-react';
 import { reportsService } from '../services/reports';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -115,9 +120,77 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
 
+      {/* QUICK NAVIGATION GRID FOR MOBILE/EASY ACCESS */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider text-left">Quick Portal Actions</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          
+          <Link 
+            to="/drivers"
+            className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md active:scale-95 transition-all duration-200 group"
+          >
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl text-blue-600 dark:text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition duration-200 mb-2.5">
+              <Users size={22} className="stroke-[2]" />
+            </div>
+            <span className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide">Drivers</span>
+          </Link>
+
+          <Link 
+            to="/customers"
+            className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md active:scale-95 transition-all duration-200 group"
+          >
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition duration-200 mb-2.5">
+              <UserCheck size={22} className="stroke-[2]" />
+            </div>
+            <span className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide">Customers & Jobs</span>
+          </Link>
+
+          <Link 
+            to="/fuel"
+            className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md active:scale-95 transition-all duration-200 group"
+          >
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl text-amber-600 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-white transition duration-200 mb-2.5">
+              <Fuel size={22} className="stroke-[2]" />
+            </div>
+            <span className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide">Fuel Logs</span>
+          </Link>
+
+          <Link 
+            to="/reports"
+            className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md active:scale-95 transition-all duration-200 group"
+          >
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition duration-200 mb-2.5">
+              <FileText size={22} className="stroke-[2]" />
+            </div>
+            <span className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide">Financial Reports</span>
+          </Link>
+
+          <Link 
+            to="/calculator"
+            className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md active:scale-95 transition-all duration-200 group"
+          >
+            <div className="p-3 bg-teal-50 dark:bg-teal-950/40 rounded-xl text-teal-600 dark:text-teal-400 group-hover:bg-teal-500 group-hover:text-white transition duration-200 mb-2.5">
+              <Calculator size={22} className="stroke-[2]" />
+            </div>
+            <span className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide">Calculator</span>
+          </Link>
+
+          <Link 
+            to="/job-calculator"
+            className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md active:scale-95 transition-all duration-200 group"
+          >
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl text-rose-600 dark:text-rose-400 group-hover:bg-rose-500 group-hover:text-white transition duration-200 mb-2.5">
+              <Truck size={22} className="stroke-[2]" />
+            </div>
+            <span className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide">Job Calculator</span>
+          </Link>
+
+        </div>
+      </div>
+
       {/* TODAY METRICS CARD GROUP */}
       <div className="space-y-3">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Today's Summary</h2>
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider text-left">Today's Summary</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Income */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
