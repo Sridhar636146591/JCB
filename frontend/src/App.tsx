@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { authService } from './services/auth';
 import Layout from './components/Layout';
-import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Drivers from './pages/Drivers';
 import Customers from './pages/Customers';
@@ -14,15 +13,10 @@ import SplashScreen from './components/SplashScreen';
 import './App.css';
 
 // Guard for protected pages (Owner panel)
+// If not authenticated, redirect to "/" (triggers auto-login via splash screen)
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const authenticated = authService.isAuthenticated();
-  return authenticated ? <Layout>{children}</Layout> : <Navigate to="/login" replace />;
-};
-
-// Guard for login page (prevent visiting login if already authenticated)
-const LoginRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const authenticated = authService.isAuthenticated();
-  return authenticated ? <Navigate to="/" replace /> : <>{children}</>;
+  return authenticated ? <Layout>{children}</Layout> : <Navigate to="/" replace />;
 };
 
 const App: React.FC = () => {
@@ -33,19 +27,8 @@ const App: React.FC = () => {
   }
 
   return (
-
     <BrowserRouter>
       <Routes>
-        {/* Public Login Route */}
-        <Route 
-          path="/login" 
-          element={
-            <LoginRoute>
-              <Login />
-            </LoginRoute>
-          } 
-        />
-
         {/* Protected Owner Routes */}
         <Route 
           path="/" 

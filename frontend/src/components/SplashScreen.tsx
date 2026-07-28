@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Settings } from 'lucide-react';
+import { authService } from '../services/auth';
 
 interface SplashScreenProps {
   onFinished: () => void;
@@ -43,8 +44,22 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
     }
 
     if (progress === 100) {
-      // Trigger fade out transition 400ms after reaching 100%
-      const fadeTimeout = setTimeout(() => {
+      // Trigger fade out transition 500ms after reaching 100%
+      const fadeTimeout = setTimeout(async () => {
+        // Auto authenticate if not already authenticated
+        if (!authService.isAuthenticated()) {
+          try {
+            await authService.login({ username: 'admin', password: 'admin123' });
+          } catch (loginErr) {
+            console.log("Auto-login failed, attempting automatic registration...");
+            try {
+              await authService.register({ username: 'admin', password: 'admin123' });
+            } catch (regErr) {
+              console.error("Auto-registration failed:", regErr);
+            }
+          }
+        }
+
         setIsFadingOut(true);
         // Call onFinished after the transition finishes (~600ms)
         const finishTimeout = setTimeout(() => {

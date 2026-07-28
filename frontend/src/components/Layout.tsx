@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
   UserCheck, 
   Fuel, 
   FileText, 
-  LogOut, 
   Sun, 
   Moon, 
   Menu, 
@@ -14,14 +13,12 @@ import {
   Calculator,
   Truck
 } from 'lucide-react';
-import { authService } from '../services/auth';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -30,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
-  const user = authService.getCurrentUser();
+
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -45,10 +42,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate('/login');
-  };
+
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -104,27 +98,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           })}
         </nav>
 
-        {/* Footer info & Logout */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
-          <div className="flex items-center justify-between px-2">
-            <div className="truncate">
-              <p className="text-xs text-slate-400 font-medium">Log in as</p>
-              <p className="text-sm font-semibold truncate text-slate-700 dark:text-slate-300">{user?.username || 'Owner'}</p>
-            </div>
-            <button 
-              onClick={toggleTheme}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition"
-              title="Toggle theme"
-            >
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-            </button>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition duration-200"
+        {/* Footer info */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-4">
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Theme Mode</span>
+          <button 
+            onClick={toggleTheme}
+            className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition cursor-pointer"
+            title="Toggle theme"
           >
-            <LogOut size={18} />
-            Logout
+            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
           </button>
         </div>
       </aside>
@@ -209,21 +191,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             })}
           </nav>
 
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 dark:border-slate-800 space-y-2 bg-white dark:bg-slate-900">
-            <div className="px-2 pb-2">
-              <p className="text-xs text-slate-400 font-medium">Logged in as</p>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate">{user?.username || 'Owner'}</p>
-            </div>
-            <button
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                handleLogout();
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
-            >
-              <LogOut size={18} />
-              Logout
-            </button>
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center px-4">
+            <span className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Portal Access Active</span>
           </div>
         </aside>
 
