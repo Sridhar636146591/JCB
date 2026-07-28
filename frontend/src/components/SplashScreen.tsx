@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, AlertTriangle } from 'lucide-react';
 import { authService } from '../services/auth';
 
 interface SplashScreenProps {
@@ -10,9 +10,12 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('Initializing Systems...');
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Increment progress over ~2.4 seconds
+    // Only run interval if there is no error and progress is under 100%
+    if (error || progress >= 100) return;
+
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -24,13 +27,15 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
         const next = prev + step;
         return next > 100 ? 100 : next;
       });
-    }, 100);
+    }, 120);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [progress, error]);
 
   // Map progress to mechanical/fleet themed status texts
   useEffect(() => {
+    if (error) return;
+
     if (progress < 25) {
       setStatusText('Powering up heavy engine systems...');
     } else if (progress < 50) {
@@ -44,33 +49,45 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
     }
 
     if (progress === 100) {
-      // Trigger fade out transition 500ms after reaching 100%
-      const fadeTimeout = setTimeout(async () => {
-        // Auto authenticate if not already authenticated
+      const authAndExit = async () => {
         if (!authService.isAuthenticated()) {
+          setStatusText('Authenticating secure portal access...');
           try {
+            // Try to log in with admin/admin123
             await authService.login({ username: 'admin', password: 'admin123' });
           } catch (loginErr) {
             console.log("Auto-login failed, attempting automatic registration...");
             try {
+              // If user does not exist, register the admin user automatically
               await authService.register({ username: 'admin', password: 'admin123' });
             } catch (regErr) {
               console.error("Auto-registration failed:", regErr);
+              setError('Failed to connect to the backend database service. Please check your Render VITE_API_URL settings or verify if the backend is running.');
+              return;
             }
           }
         }
 
+        // Successfully logged in / registered, trigger exit transition
         setIsFadingOut(true);
-        // Call onFinished after the transition finishes (~600ms)
         const finishTimeout = setTimeout(() => {
           onFinished();
         }, 600);
         return () => clearTimeout(finishTimeout);
+      };
+
+      const fadeTimeout = setTimeout(() => {
+        authAndExit();
       }, 500);
 
       return () => clearTimeout(fadeTimeout);
     }
-  }, [progress, onFinished]);
+  }, [progress, onFinished, error]);
+
+  const handleRetry = () => {
+    setError(null);
+    setProgress(75); // Reset progress back to 75% to trigger re-connection loop
+  };
 
   return (
     <div
@@ -124,24 +141,44 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
 
         {/* Progress & Loader Section */}
         <div className="w-80 flex flex-col items-center animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-          {/* Progress Bar Container */}
-          <div className="w-full bg-slate-900/80 border border-slate-800/80 h-3 rounded-full overflow-hidden p-0.5 shadow-inner relative flex items-center">
-            {/* Glowing amber bar */}
-            <div 
-              className="bg-amber-500 h-full rounded-full transition-all duration-100 ease-out shadow-[0_0_8px_rgba(245,158,11,0.5)]"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+          {error ? (
+            <div className="w-full bg-rose-950/30 border border-rose-900/40 p-4 rounded-xl flex flex-col items-center shadow-lg transition">
+              <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider mb-2">
+                <AlertTriangle size={16} />
+                <span>Connection Error</span>
+              </div>
+              <p className="text-slate-300 text-xs leading-relaxed font-semibold mb-4 text-center">
+                {error}
+              </p>
+              <button
+                onClick={handleRetry}
+                className="bg-amber-500 hover:bg-amber-600 active:scale-[0.97] text-slate-950 px-5 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer shadow-lg shadow-amber-500/10"
+              >
+                Retry Connection
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Progress Bar Container */}
+              <div className="w-full bg-slate-900/80 border border-slate-800/80 h-3 rounded-full overflow-hidden p-0.5 shadow-inner relative flex items-center">
+                {/* Glowing amber bar */}
+                <div 
+                  className="bg-amber-500 h-full rounded-full transition-all duration-100 ease-out shadow-[0_0_8px_rgba(245,158,11,0.5)]"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
 
-          {/* Details below bar */}
-          <div className="w-full flex justify-between items-center mt-3 text-slate-500 font-semibold text-xs tracking-wider">
-            <span className="text-amber-500/80 italic font-medium transition-all duration-300">
-              {statusText}
-            </span>
-            <span className="font-mono text-amber-500 font-bold ml-2">
-              {progress}%
-            </span>
-          </div>
+              {/* Details below bar */}
+              <div className="w-full flex justify-between items-center mt-3 text-slate-500 font-semibold text-xs tracking-wider">
+                <span className="text-amber-500/80 italic font-medium transition-all duration-300">
+                  {statusText}
+                </span>
+                <span className="font-mono text-amber-500 font-bold ml-2">
+                  {progress}%
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

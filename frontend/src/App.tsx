@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { authService } from './services/auth';
 import Layout from './components/Layout';
@@ -13,14 +13,22 @@ import SplashScreen from './components/SplashScreen';
 import './App.css';
 
 // Guard for protected pages (Owner panel)
-// If not authenticated, redirect to "/" (triggers auto-login via splash screen)
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// If not authenticated, activate the splash screen to silently log in again
+const ProtectedRoute: React.FC<{ children: React.ReactNode; resetSplash: () => void }> = ({ children, resetSplash }) => {
   const authenticated = authService.isAuthenticated();
-  return authenticated ? <Layout>{children}</Layout> : <Navigate to="/" replace />;
+
+  useEffect(() => {
+    if (!authenticated) {
+      resetSplash();
+    }
+  }, [authenticated, resetSplash]);
+
+  return authenticated ? <Layout>{children}</Layout> : null;
 };
 
 const App: React.FC = () => {
   const [isSplashActive, setIsSplashActive] = useState(true);
+  const resetSplash = () => setIsSplashActive(true);
 
   if (isSplashActive) {
     return <SplashScreen onFinished={() => setIsSplashActive(false)} />;
@@ -33,7 +41,7 @@ const App: React.FC = () => {
         <Route 
           path="/" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute resetSplash={resetSplash}>
               <Dashboard />
             </ProtectedRoute>
           } 
@@ -41,7 +49,7 @@ const App: React.FC = () => {
         <Route 
           path="/drivers" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute resetSplash={resetSplash}>
               <Drivers />
             </ProtectedRoute>
           } 
@@ -49,7 +57,7 @@ const App: React.FC = () => {
         <Route 
           path="/customers" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute resetSplash={resetSplash}>
               <Customers />
             </ProtectedRoute>
           } 
@@ -57,7 +65,7 @@ const App: React.FC = () => {
         <Route 
           path="/fuel" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute resetSplash={resetSplash}>
               <Fuel />
             </ProtectedRoute>
           } 
@@ -65,7 +73,7 @@ const App: React.FC = () => {
         <Route 
           path="/reports" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute resetSplash={resetSplash}>
               <Reports />
             </ProtectedRoute>
           } 
@@ -73,7 +81,7 @@ const App: React.FC = () => {
         <Route 
           path="/calculator" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute resetSplash={resetSplash}>
               <Calculator />
             </ProtectedRoute>
           } 
@@ -81,7 +89,7 @@ const App: React.FC = () => {
         <Route 
           path="/job-calculator" 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute resetSplash={resetSplash}>
               <JobCalculator />
             </ProtectedRoute>
           } 
