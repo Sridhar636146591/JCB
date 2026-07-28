@@ -10,6 +10,15 @@ export const authService = {
     return response.data;
   },
 
+  async register(credentials: any) {
+    const response = await api.post('/auth/register', credentials);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    return response.data;
+  },
+
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

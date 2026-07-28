@@ -36,6 +36,40 @@ def login():
         'user': user.to_dict()
     }), 200
 
+@auth_bp.route('/register', methods=['POST'])
+def register():
+    data = request.get_json() or {}
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'message': 'Username and password are required'}), 400
+        
+    username = username.strip()
+    
+    # Check if username already exists
+    existing_user = User.query.filter_by(username=username).first()
+    if existing_user:
+        return jsonify({'message': 'Username already exists'}), 409
+        
+    try:
+        new_user = User(username=username)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        # Generate token to log them in automatically
+        access_token = create_access_token(identity=str(new_user.id))
+        return jsonify({
+            'message': 'User registered successfully',
+            'token': access_token,
+            'user': new_user.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        print(f"[ERROR AUTH] Registration failed: {str(e)}")
+        return jsonify({'message': 'Database error occurred during registration'}), 500
+
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def me():

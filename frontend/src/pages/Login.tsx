@@ -7,6 +7,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,11 +22,15 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      await authService.login({ username, password });
+      if (isRegister) {
+        await authService.register({ username, password });
+      } else {
+        await authService.login({ username, password });
+      }
       navigate('/');
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'Invalid username or password');
+      setError(err.response?.data?.message || 'Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -43,8 +48,12 @@ const Login: React.FC = () => {
           <div className="bg-slate-800 p-2 rounded-2xl text-slate-950 mb-3 shadow-lg border border-slate-700">
             <img src="/jcb.png" alt="Logo" className="w-14 h-14 object-contain rounded-xl" />
           </div>
-          <h1 className="text-xl font-extrabold tracking-tight text-white m-0 text-center">Sri Lakshmi Narayana Swamy Earth Movers</h1>
-          <p className="text-sm text-amber-500 font-bold uppercase tracking-wider mt-1">JCB & Tractor Rental Portal</p>
+          <h1 className="text-xl font-extrabold tracking-tight text-white m-0 text-center">
+            {isRegister ? 'Create Owner Account' : 'Sri Lakshmi Narayana Swamy Earth Movers'}
+          </h1>
+          <p className="text-sm text-amber-500 font-bold uppercase tracking-wider mt-1 text-center">
+            {isRegister ? 'Register for JCB & Tractor Portal' : 'JCB & Tractor Rental Portal'}
+          </p>
         </div>
 
         {error && (
@@ -94,15 +103,30 @@ const Login: React.FC = () => {
             className="w-full bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-950 font-bold py-3 px-4 rounded-xl transition duration-200 shadow-lg shadow-amber-500/10 cursor-pointer disabled:opacity-50"
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Sign In'}
+            {loading ? (isRegister ? 'Creating Account...' : 'Logging in...') : (isRegister ? 'Register & Sign In' : 'Sign In')}
           </button>
         </form>
+
+        <div className="mt-6 text-center border-t border-slate-800/80 pt-4">
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegister(!isRegister);
+              setError('');
+            }}
+            className="text-xs text-slate-400 hover:text-amber-500 font-bold uppercase tracking-wider transition duration-200 cursor-pointer"
+          >
+            {isRegister ? 'Already have an account? Sign In' : 'New Owner? Create Account'}
+          </button>
+        </div>
       </div>
       
       {/* Help footer */}
-      <p className="text-xs text-slate-600 mt-6 z-10 font-medium">
-        Default Owner Login: <span className="font-semibold text-slate-400">admin</span> / <span className="font-semibold text-slate-400">admin123</span>
-      </p>
+      {!isRegister && (
+        <p className="text-xs text-slate-600 mt-6 z-10 font-medium">
+          Default Owner Login: <span className="font-semibold text-slate-400">admin</span> / <span className="font-semibold text-slate-400">admin123</span>
+        </p>
+      )}
     </div>
   );
 };
