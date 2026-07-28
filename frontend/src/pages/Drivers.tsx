@@ -9,7 +9,8 @@ import {
   Phone,
   Users,
   Eye,
-  Share2
+  Share2,
+  AlertCircle
 } from 'lucide-react';
 import { driversService } from '../services/drivers';
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '../components/UI/Dialog';
@@ -32,6 +33,8 @@ const Drivers: React.FC = () => {
   const [driverForm, setDriverForm] = useState({ id: null, name: '', phone: '', joining_date: '' });
   const [paymentForm, setPaymentForm] = useState({ amount: '', date: '', notes: '' });
   const [pdfForm, setPdfForm] = useState({ range_type: 'month', start_date: '', end_date: '' });
+  const [driverError, setDriverError] = useState('');
+  const [paymentError, setPaymentError] = useState('');
 
   const fetchDrivers = async () => {
     try {
@@ -70,12 +73,14 @@ const Drivers: React.FC = () => {
 
   const handleOpenAddDriver = () => {
     setDriverForm({ id: null, name: '', phone: '', joining_date: new Date().toISOString().split('T')[0] });
+    setDriverError('');
     setIsDriverModalOpen(true);
   };
 
   const handleOpenEditDriver = (driver: any, e: React.MouseEvent) => {
     e.stopPropagation();
     setDriverForm({ id: driver.id, name: driver.name, phone: driver.phone, joining_date: driver.joining_date });
+    setDriverError('');
     setIsDriverModalOpen(true);
   };
 
@@ -83,6 +88,7 @@ const Drivers: React.FC = () => {
     e.preventDefault();
     if (!driverForm.name || !driverForm.joining_date) return;
     
+    setDriverError('');
     try {
       if (driverForm.id) {
         const updated = await driversService.editDriver(driverForm.id, driverForm);
@@ -94,8 +100,9 @@ const Drivers: React.FC = () => {
         if (!selectedDriver) selectDriver(added);
       }
       setIsDriverModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving driver', err);
+      setDriverError(err.response?.data?.message || err.message || 'Failed to save driver details. Please try again.');
     }
   };
 
@@ -117,6 +124,7 @@ const Drivers: React.FC = () => {
 
   const handleOpenAddPayment = () => {
     setPaymentForm({ amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
+    setPaymentError('');
     setIsPaymentModalOpen(true);
   };
 
@@ -124,6 +132,7 @@ const Drivers: React.FC = () => {
     e.preventDefault();
     if (!selectedDriver || !paymentForm.amount || !paymentForm.date) return;
 
+    setPaymentError('');
     try {
       await driversService.addPayment(selectedDriver.id, {
         amount: parseIndianNumberString(paymentForm.amount),
@@ -133,8 +142,9 @@ const Drivers: React.FC = () => {
       // Refresh payments list
       selectDriver(selectedDriver);
       setIsPaymentModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving payment', err);
+      setPaymentError(err.response?.data?.message || err.message || 'Failed to log payment.');
     }
   };
 
@@ -397,6 +407,12 @@ const Drivers: React.FC = () => {
           <DialogHeader>
             <DialogTitle>{driverForm.id ? 'Edit Driver Details' : 'Add New Driver Profile'}</DialogTitle>
           </DialogHeader>
+          {driverError && (
+            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{driverError}</span>
+            </div>
+          )}
           <div className="space-y-4 py-2 text-left">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-400 uppercase">Driver Name</label>
@@ -454,6 +470,12 @@ const Drivers: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Add Amount for {selectedDriver?.name}</DialogTitle>
           </DialogHeader>
+          {paymentError && (
+            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{paymentError}</span>
+            </div>
+          )}
           <div className="space-y-4 py-2 text-left">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-400 uppercase">Payment Amount (Rs.)</label>

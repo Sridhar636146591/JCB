@@ -30,11 +30,11 @@ def get_customers():
 def add_customer():
     data = request.get_json() or {}
     name = data.get('name')
-    phone = data.get('phone')
-    village = data.get('village')
+    phone = data.get('phone') or ''
+    village = data.get('village') or ''
     
-    if not name or not phone or not village:
-        return jsonify({'message': 'Missing required fields'}), 400
+    if not name:
+        return jsonify({'message': 'Customer Name is required'}), 400
         
     customer = Customer(name=name, phone=phone, village=village)
     db.session.add(customer)
@@ -89,7 +89,9 @@ def add_customer_job(customer_id):
         return jsonify({'message': 'Invalid work type'}), 400
         
     # Check driver if provided
-    if driver_id:
+    if driver_id == '' or driver_id is None:
+        driver_id = None
+    else:
         driver = Driver.query.get(driver_id)
         if not driver:
             return jsonify({'message': 'Driver not found'}), 404

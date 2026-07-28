@@ -11,7 +11,8 @@ import {
   Search,
   ChevronRight,
   Eye,
-  Share2
+  Share2,
+  AlertCircle
 } from 'lucide-react';
 import type { Customer, CustomerJob } from '../services/customers';
 import { customersService } from '../services/customers';
@@ -33,6 +34,8 @@ const Customers: React.FC = () => {
   // Modals state
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [customerError, setCustomerError] = useState('');
+  const [jobError, setJobError] = useState('');
   
   // Form states
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
@@ -109,12 +112,14 @@ const Customers: React.FC = () => {
   // --- CUSTOMER ACTIONS ---
   const handleOpenAddCustomer = () => {
     setCustomerForm({ id: null, name: '', phone: '', village: '' });
+    setCustomerError('');
     setIsCustomerModalOpen(true);
   };
 
   const handleOpenEditCustomer = (cust: Customer, e: React.MouseEvent) => {
     e.stopPropagation();
     setCustomerForm({ id: cust.id, name: cust.name, phone: cust.phone, village: cust.village });
+    setCustomerError('');
     setIsCustomerModalOpen(true);
   };
 
@@ -122,6 +127,7 @@ const Customers: React.FC = () => {
     e.preventDefault();
     if (!customerForm.name) return;
     
+    setCustomerError('');
     try {
       if (customerForm.id) {
         const updated = await customersService.editCustomer(customerForm.id, customerForm);
@@ -133,8 +139,9 @@ const Customers: React.FC = () => {
         if (!selectedCustomer) selectCustomer(added);
       }
       setIsCustomerModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving customer', err);
+      setCustomerError(err.response?.data?.message || err.message || 'Failed to save customer details.');
     }
   };
 
@@ -174,6 +181,7 @@ const Customers: React.FC = () => {
       amount_paid: '0',
       notes: ''
     });
+    setJobError('');
     setIsJobModalOpen(true);
   };
 
@@ -196,6 +204,7 @@ const Customers: React.FC = () => {
       amount_paid: formatIndianNumberString(job.amount_paid.toString()),
       notes: job.notes || ''
     });
+    setJobError('');
     setIsJobModalOpen(true);
   };
 
@@ -217,6 +226,7 @@ const Customers: React.FC = () => {
       amount_paid: parseIndianNumberString(jobForm.amount_paid) || 0,
     };
     
+    setJobError('');
     try {
       if (jobForm.id) {
         await customersService.editCustomerJob(jobForm.id, jobPayload);
@@ -225,8 +235,9 @@ const Customers: React.FC = () => {
       }
       selectCustomer(selectedCustomer);
       setIsJobModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving job entry', err);
+      setJobError(err.response?.data?.message || err.message || 'Failed to save job entry details.');
     }
   };
 
@@ -603,6 +614,12 @@ const Customers: React.FC = () => {
           <DialogHeader>
             <DialogTitle>{customerForm.id ? 'Edit Customer Info' : 'Register New Customer'}</DialogTitle>
           </DialogHeader>
+          {customerError && (
+            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2 text-left">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{customerError}</span>
+            </div>
+          )}
           <div className="space-y-4 py-2 text-left">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-400 uppercase">Customer Name</label>
@@ -660,6 +677,12 @@ const Customers: React.FC = () => {
           <DialogHeader>
             <DialogTitle>{jobForm.id ? 'Modify Job Entry' : 'Record New Job Billing'}</DialogTitle>
           </DialogHeader>
+          {jobError && (
+            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2 text-left">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{jobError}</span>
+            </div>
+          )}
           <div className="space-y-4 py-2 text-left overflow-y-auto flex-1 pr-1">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">

@@ -21,11 +21,11 @@ def get_drivers():
 def add_driver():
     data = request.get_json() or {}
     name = data.get('name')
-    phone = data.get('phone')
+    phone = data.get('phone') or ''
     joining_date = data.get('joining_date')
     
-    if not name or not phone or not joining_date:
-        return jsonify({'message': 'Missing required fields'}), 400
+    if not name or not joining_date:
+        return jsonify({'message': 'Driver Name and Joining Date are required'}), 400
         
     driver = Driver(name=name, phone=phone, joining_date=joining_date)
     db.session.add(driver)
