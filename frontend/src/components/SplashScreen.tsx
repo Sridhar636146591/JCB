@@ -11,6 +11,13 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
   const [statusText, setStatusText] = useState('Initializing Systems...');
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // PIN states
+  const [showPin, setShowPin] = useState(false);
+  const [pin, setPin] = useState('');
+  const [pinError, setPinError] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
     // Only run interval if there is no error and progress is under 100%
@@ -49,7 +56,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
     }
 
     if (progress === 100) {
-      const authAndExit = async () => {
+      const authAndPrepare = async () => {
         if (!authService.isAuthenticated()) {
           setStatusText('Authenticating secure portal access...');
           try {
@@ -67,22 +74,77 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
             }
           }
         }
-
-        // Successfully logged in / registered, trigger exit transition
-        setIsFadingOut(true);
-        const finishTimeout = setTimeout(() => {
-          onFinished();
-        }, 600);
-        return () => clearTimeout(finishTimeout);
+        // Background login complete, now show PIN page
+        setShowPin(true);
       };
 
       const fadeTimeout = setTimeout(() => {
-        authAndExit();
+        authAndPrepare();
       }, 500);
 
       return () => clearTimeout(fadeTimeout);
     }
-  }, [progress, onFinished, error]);
+  }, [progress, error]);
+
+  const handlePinInput = (num: string) => {
+    if (pin.length < 4 && !isSuccess && !isShaking) {
+      const nextPin = pin + num;
+      setPin(nextPin);
+      if (nextPin.length === 4) {
+        verifyPin(nextPin);
+      }
+    }
+  };
+
+  const handleBackspace = () => {
+    if (!isSuccess && !isShaking) {
+      setPin(prev => prev.slice(0, -1));
+    }
+  };
+
+  const handleClear = () => {
+    if (!isSuccess && !isShaking) {
+      setPin('');
+    }
+  };
+
+  const verifyPin = (enteredPin: string) => {
+    if (enteredPin === '3121') {
+      setIsSuccess(true);
+      setTimeout(() => {
+        setIsFadingOut(true);
+        setTimeout(() => {
+          onFinished();
+        }, 600);
+      }, 500);
+    } else {
+      setIsShaking(true);
+      setPinError(true);
+      setTimeout(() => {
+        setPin('');
+        setIsShaking(false);
+        setPinError(false);
+      }, 800);
+    }
+  };
+
+  // Keyboard support for security PIN
+  useEffect(() => {
+    if (!showPin || isSuccess || isShaking) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key >= '0' && e.key <= '9') {
+        handlePinInput(e.key);
+      } else if (e.key === 'Backspace') {
+        handleBackspace();
+      } else if (e.key === 'Escape' || e.key === 'Delete') {
+        handleClear();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showPin, pin, isSuccess, isShaking]);
 
   const handleRetry = () => {
     setError(null);
@@ -139,10 +201,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
           JCB & Tractor Rental Portal
         </p>
 
-        {/* Progress & Loader Section */}
-        <div className="w-80 flex flex-col items-center animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+        {/* Progress / PIN Lock Section */}
+        <div className="w-80 flex flex-col items-center min-h-[300px]">
           {error ? (
-            <div className="w-full bg-rose-950/30 border border-rose-900/40 p-4 rounded-xl flex flex-col items-center shadow-lg transition">
+            <div className="w-full bg-rose-950/30 border border-rose-900/40 p-4 rounded-xl flex flex-col items-center shadow-lg transition animate-fade-in-up">
               <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider mb-2">
                 <AlertTriangle size={16} />
                 <span>Connection Error</span>
@@ -157,11 +219,75 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
                 Retry Connection
               </button>
             </div>
+          ) : showPin ? (
+            <div className="flex flex-col items-center w-full animate-fade-in-up">
+              {/* Header inside PIN UI */}
+              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-6">
+                Enter Security PIN to Unlock
+              </p>
+              
+              {/* PIN Indicator Dots */}
+              <div className={`flex gap-6 justify-center mb-8 ${isShaking ? 'animate-shake' : ''}`}>
+                {[0, 1, 2, 3].map((index) => {
+                  const isActive = index < pin.length;
+                  return (
+                    <div
+                      key={index}
+                      className={`w-4 h-4 rounded-full transition-all duration-300 ${
+                        isSuccess
+                          ? 'bg-emerald-500 shadow-[0_0_12px_#10b981] scale-110'
+                          : pinError
+                          ? 'bg-rose-500 shadow-[0_0_12px_#f43f5e]'
+                          : isActive
+                          ? 'bg-amber-500 shadow-[0_0_10px_#f59e0b] scale-110'
+                          : 'bg-slate-800 border border-slate-700/80'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Keypad Grid */}
+              <div className="grid grid-cols-3 gap-4 max-w-[280px] w-full">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => handlePinInput(num.toString())}
+                    className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800/80 hover:border-amber-500/50 hover:bg-amber-500/5 text-xl font-extrabold text-white transition-all active:scale-[0.9] flex items-center justify-center cursor-pointer shadow-lg hover:shadow-amber-500/5 focus:outline-none"
+                  >
+                    {num}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="w-16 h-16 rounded-full text-slate-500 hover:text-slate-300 text-xs font-black transition-all active:scale-[0.9] flex items-center justify-center cursor-pointer focus:outline-none"
+                >
+                  CLEAR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePinInput('0')}
+                  className="w-16 h-16 rounded-full bg-slate-900/60 border border-slate-800/80 hover:border-amber-500/50 hover:bg-amber-500/5 text-xl font-extrabold text-white transition-all active:scale-[0.9] flex items-center justify-center cursor-pointer shadow-lg hover:shadow-amber-500/5 focus:outline-none"
+                >
+                  0
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBackspace}
+                  className="w-16 h-16 rounded-full text-slate-500 hover:text-slate-350 transition-all active:scale-[0.9] flex items-center justify-center cursor-pointer focus:outline-none"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.211-.211.498-.33.796-.33H19.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-9.284c-.298 0-.585-.119-.796-.33z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           ) : (
-            <>
+            <div className="w-full flex flex-col items-center animate-fade-in-up">
               {/* Progress Bar Container */}
               <div className="w-full bg-slate-900/80 border border-slate-800/80 h-3 rounded-full overflow-hidden p-0.5 shadow-inner relative flex items-center">
-                {/* Glowing amber bar */}
                 <div 
                   className="bg-amber-500 h-full rounded-full transition-all duration-100 ease-out shadow-[0_0_8px_rgba(245,158,11,0.5)]"
                   style={{ width: `${progress}%` }}
@@ -177,7 +303,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
                   {progress}%
                 </span>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
