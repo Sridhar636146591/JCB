@@ -191,56 +191,56 @@ const Dashboard: React.FC = () => {
       {/* TODAY METRICS CARD GROUP */}
       <div className="space-y-3">
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider text-left">Today's Summary</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-3 gap-3">
           {/* Income */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500 dark:text-slate-400 font-bold">Today's Income</span>
-              <div className="bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded-lg text-emerald-600 dark:text-emerald-400">
-                <TrendingUp size={18} />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-3 md:p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400 font-bold leading-tight">Income</span>
+              <div className="bg-emerald-50 dark:bg-emerald-950/30 p-1.5 md:p-2 rounded-lg text-emerald-600 dark:text-emerald-400">
+                <TrendingUp size={14} className="md:w-[18px] md:h-[18px]" />
               </div>
             </div>
-            <p className="text-2xl font-black mt-3 text-slate-900 dark:text-slate-100">{formatCurrency(today.income)}</p>
-            <span className="text-xs text-emerald-500 font-bold flex items-center gap-1 mt-2">
-              <ArrowUpRight size={14} /> Total job billings today
+            <p className="text-base md:text-2xl font-black text-slate-900 dark:text-slate-100">{formatCurrency(today.income)}</p>
+            <span className="text-[9px] md:text-xs text-emerald-500 font-bold flex items-center gap-1 mt-1">
+              <ArrowUpRight size={11} />Today billings
             </span>
           </div>
 
           {/* Expenses */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500 dark:text-slate-400 font-bold">Today's Expenses</span>
-              <div className="bg-rose-50 dark:bg-rose-950/30 p-2 rounded-lg text-rose-600 dark:text-rose-400">
-                <TrendingDown size={18} />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-3 md:p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400 font-bold leading-tight">Expenses</span>
+              <div className="bg-rose-50 dark:bg-rose-950/30 p-1.5 md:p-2 rounded-lg text-rose-600 dark:text-rose-400">
+                <TrendingDown size={14} className="md:w-[18px] md:h-[18px]" />
               </div>
             </div>
-            <p className="text-2xl font-black mt-3 text-slate-900 dark:text-slate-100">{formatCurrency(today.expenses)}</p>
-            <span className="text-xs text-rose-500 font-bold flex items-center gap-1 mt-2">
-              Fuel, driver pay & job costs
+            <p className="text-base md:text-2xl font-black text-slate-900 dark:text-slate-100">{formatCurrency(today.expenses)}</p>
+            <span className="text-[9px] md:text-xs text-rose-500 font-bold mt-1 block">
+              Fuel &amp; costs
             </span>
           </div>
 
           {/* Profit */}
-          <div className={`border rounded-xl p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200 ${
+          <div className={`border rounded-xl p-3 md:p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200 ${
             today.profit >= 0 
               ? 'bg-emerald-50/30 dark:bg-emerald-950/10 border-emerald-200 dark:border-emerald-900/40' 
               : 'bg-rose-50/30 dark:bg-rose-950/10 border-rose-200 dark:border-rose-900/40'
           }`}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold">Today's Profit</span>
-              <div className={`p-2 rounded-lg ${
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] md:text-sm font-bold leading-tight">Profit</span>
+              <div className={`p-1.5 md:p-2 rounded-lg ${
                 today.profit >= 0 
                   ? 'bg-emerald-100/60 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400' 
                   : 'bg-rose-100/60 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400'
               }`}>
-                <IndianRupee size={18} />
+                <IndianRupee size={14} className="md:w-[18px] md:h-[18px]" />
               </div>
             </div>
-            <p className={`text-2xl font-black mt-3 ${
+            <p className={`text-base md:text-2xl font-black ${
               today.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
             }`}>{formatCurrency(today.profit)}</p>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1 mt-2">
-              Net balance today
+            <span className="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 font-bold mt-1 block">
+              Net today
             </span>
           </div>
         </div>
@@ -249,56 +249,52 @@ const Dashboard: React.FC = () => {
       {/* MONTHLY METRICS CARD GROUP */}
       <div className="space-y-3">
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">This Month's Summary ({new Date().toLocaleString('default', { month: 'long' })})</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-3 gap-3">
           {/* Income */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500 dark:text-slate-400 font-bold">Monthly Income</span>
-              <div className="bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded-lg text-emerald-600 dark:text-emerald-400">
-                <Calendar size={18} />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-3 md:p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400 font-bold leading-tight">Income</span>
+              <div className="bg-emerald-50 dark:bg-emerald-950/30 p-1.5 md:p-2 rounded-lg text-emerald-600 dark:text-emerald-400">
+                <Calendar size={14} className="md:w-[18px] md:h-[18px]" />
               </div>
             </div>
-            <p className="text-2xl font-black mt-3 text-slate-900 dark:text-slate-100">{formatCurrency(month.income)}</p>
-            <span className="text-xs text-emerald-500 font-bold flex items-center gap-1 mt-2">
-              Cumulative job billings
-            </span>
+            <p className="text-base md:text-2xl font-black text-slate-900 dark:text-slate-100">{formatCurrency(month.income)}</p>
+            <span className="text-[9px] md:text-xs text-emerald-500 font-bold mt-1 block">Cumulative billings</span>
           </div>
 
           {/* Expenses */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500 dark:text-slate-400 font-bold">Monthly Expenses</span>
-              <div className="bg-rose-50 dark:bg-rose-950/30 p-2 rounded-lg text-rose-600 dark:text-rose-400">
-                <TrendingDown size={18} />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-xl p-3 md:p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400 font-bold leading-tight">Expenses</span>
+              <div className="bg-rose-50 dark:bg-rose-950/30 p-1.5 md:p-2 rounded-lg text-rose-600 dark:text-rose-400">
+                <TrendingDown size={14} className="md:w-[18px] md:h-[18px]" />
               </div>
             </div>
-            <p className="text-2xl font-black mt-3 text-slate-900 dark:text-slate-100">{formatCurrency(month.expenses)}</p>
-            <span className="text-xs text-rose-500 font-bold flex items-center gap-1 mt-2">
-              Cumulative operational costs
-            </span>
+            <p className="text-base md:text-2xl font-black text-slate-900 dark:text-slate-100">{formatCurrency(month.expenses)}</p>
+            <span className="text-[9px] md:text-xs text-rose-500 font-bold mt-1 block">Operating costs</span>
           </div>
 
           {/* Profit */}
-          <div className={`border rounded-xl p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200 ${
+          <div className={`border rounded-xl p-3 md:p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200 ${
             month.profit >= 0 
               ? 'bg-emerald-50/30 dark:bg-emerald-950/10 border-emerald-200 dark:border-emerald-900/40' 
               : 'bg-rose-50/30 dark:bg-rose-950/10 border-rose-200 dark:border-rose-900/40'
           }`}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold">Monthly Profit</span>
-              <div className={`p-2 rounded-lg ${
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] md:text-sm font-bold leading-tight">Profit</span>
+              <div className={`p-1.5 md:p-2 rounded-lg ${
                 month.profit >= 0 
                   ? 'bg-emerald-100/60 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400' 
                   : 'bg-rose-100/60 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400'
               }`}>
-                <IndianRupee size={18} />
+                <IndianRupee size={14} className="md:w-[18px] md:h-[18px]" />
               </div>
             </div>
-            <p className={`text-2xl font-black mt-3 ${
+            <p className={`text-base md:text-2xl font-black ${
               month.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
             }`}>{formatCurrency(month.profit)}</p>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1 mt-2">
-              Net balance this month
+            <span className="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 font-bold mt-1 block">
+              Net this month
             </span>
           </div>
         </div>

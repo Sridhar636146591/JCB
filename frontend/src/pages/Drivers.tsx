@@ -428,7 +428,8 @@ const Drivers: React.FC = () => {
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-400 uppercase">Phone Number <span className="normal-case text-slate-300 dark:text-slate-600 font-medium">(Optional)</span></label>
               <input
-                type="text"
+                type="tel"
+                inputMode="tel"
                 value={driverForm.phone}
                 onChange={e => setDriverForm({ ...driverForm, phone: e.target.value })}
                 placeholder="Enter contact number (optional)"
@@ -481,11 +482,12 @@ const Drivers: React.FC = () => {
               <label className="text-xs font-bold text-slate-400 uppercase">Payment Amount (Rs.)</label>
               <input
                 type="text"
+                inputMode="numeric"
                 required
                 value={paymentForm.amount}
                 onChange={e => setPaymentForm({ ...paymentForm, amount: formatIndianNumberString(e.target.value) })}
                 placeholder="e.g. 10,000"
-                className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:border-amber-500"
+                className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-amber-500"
               />
             </div>
             <div className="space-y-1">

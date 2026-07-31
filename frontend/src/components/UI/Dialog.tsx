@@ -11,19 +11,20 @@ export const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, children }) => 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm transition-opacity duration-300"
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
       />
-      {/* Modal box */}
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col z-10 transition-all duration-300 transform scale-100 animate-in fade-in zoom-in-95 duration-250">
+      {/* Modal box — bottom sheet on mobile, centered on sm+ */}
+      <div className="relative w-full sm:max-w-lg bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 sm:rounded-2xl shadow-2xl sm:p-6 p-4 max-h-[95vh] sm:max-h-[90vh] flex flex-col z-10 animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-250 rounded-t-2xl">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition"
+          className="absolute right-4 top-4 p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition touch-action-none"
+          aria-label="Close dialog"
         >
-          <X size={16} />
+          <X size={18} />
         </button>
         <div className="overflow-y-auto pr-1 flex-1">
           {children}
@@ -34,7 +35,7 @@ export const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, children }) => 
 };
 
 export const DialogHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="mb-4 space-y-1.5 text-left">{children}</div>
+  <div className="mb-4 space-y-1.5 text-left pr-8">{children}</div>
 );
 
 export const DialogTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -42,7 +43,7 @@ export const DialogTitle: React.FC<{ children: React.ReactNode }> = ({ children 
 );
 
 export const DialogFooter: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-slate-100 dark:border-slate-800/60 pt-4">
+  <div className="mt-5 flex flex-row justify-end gap-3 border-t border-slate-100 dark:border-slate-800/60 pt-4">
     {children}
   </div>
 );

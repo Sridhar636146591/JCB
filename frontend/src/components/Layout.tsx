@@ -197,11 +197,39 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </aside>
 
         {/* MAIN CONTENT AREA */}
-        <main className="flex-1 overflow-auto p-4 md:p-8 relative">
+        <main className="flex-1 overflow-auto p-4 md:p-8 pb-20 md:pb-8 relative">
           <div className="max-w-6xl mx-auto space-y-6">
             {children}
           </div>
         </main>
+
+        {/* MOBILE STICKY BOTTOM NAVIGATION BAR */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/60 dark:border-slate-800/80 flex justify-around py-2 z-40 shadow-lg px-2">
+          {navItems.slice(0, 5).map((item) => {
+            const Active = isActive(item.path);
+            const Icon = item.icon;
+            // Shorten name for mobile tab bar
+            let shortName = item.name;
+            if (item.name === 'Customers & Jobs') shortName = 'Jobs';
+            if (item.name === 'Fuel Management') shortName = 'Fuel';
+            if (item.name === 'Reports & Analytics') shortName = 'Reports';
+            
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
+                  Active 
+                    ? 'text-amber-500 scale-105' 
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-250'
+                }`}
+              >
+                <Icon size={19} className={Active ? 'stroke-[2.5]' : 'stroke-[1.8]'} />
+                <span className="text-[9px] mt-0.5 font-bold tracking-tight">{shortName}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );

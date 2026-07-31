@@ -277,11 +277,12 @@ const Fuel: React.FC = () => {
               <label className="text-xs font-bold text-slate-400 uppercase">Enter Amount (Rs.)</label>
               <input
                 type="text"
+                inputMode="numeric"
                 required
                 value={fuelForm.amount}
                 onChange={e => setFuelForm({ ...fuelForm, amount: formatIndianNumberString(e.target.value) })}
                 placeholder="e.g. 10,000"
-                className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
+                className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2.5 text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
               />
             </div>
           </div>

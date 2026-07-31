@@ -737,37 +737,37 @@ const Customers: React.FC = () => {
                         </div>
 
                         {/* Actions right panel */}
-                        <div className="flex md:flex-col justify-end gap-2 shrink-0 md:border-l md:border-slate-100 dark:md:border-slate-800/60 md:pl-4">
+                        <div className="flex flex-wrap md:flex-col justify-end gap-2 shrink-0 md:border-l md:border-slate-100 dark:md:border-slate-800/60 md:pl-4">
                           <button
                             onClick={() => handleViewInvoice(job)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                            className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer min-h-[36px]"
                           >
-                            <Eye size={12} /> View Bill
+                            <Eye size={13} /> View Bill
                           </button>
                           <button
                             onClick={() => handleDownloadInvoice(job)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                            className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer min-h-[36px]"
                           >
-                            <FileDown size={12} /> Download PDF
+                            <FileDown size={13} /> Download
                           </button>
                           <button
                             onClick={() => handleShareWhatsApp(job)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-750 text-white text-xs font-bold rounded-lg transition cursor-pointer"
+                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition cursor-pointer min-h-[36px]"
                           >
-                            <Share2 size={12} /> Share WhatsApp
+                            <Share2 size={13} /> WhatsApp
                           </button>
                           <div className="flex gap-2 justify-end">
                             <button
                               onClick={() => handleOpenEditJob(job)}
-                              className="p-2 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                              className="p-2.5 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer min-h-[36px] min-w-[36px]"
                             >
-                              <Edit size={12} />
+                              <Edit size={13} />
                             </button>
                             <button
                               onClick={() => handleDeleteJob(job.id!)}
-                              className="p-2 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition cursor-pointer"
+                              className="p-2.5 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition cursor-pointer min-h-[36px] min-w-[36px]"
                             >
-                              <Trash2 size={12} />
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         </div>
@@ -815,7 +815,8 @@ const Customers: React.FC = () => {
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-400 uppercase">Phone Number <span className="normal-case text-slate-300 dark:text-slate-600 font-medium">(Optional)</span></label>
               <input
-                type="text"
+                type="tel"
+                inputMode="tel"
                 value={customerForm.phone}
                 onChange={e => setCustomerForm({ ...customerForm, phone: e.target.value })}
                 placeholder="Enter contact number (optional)"
@@ -874,6 +875,7 @@ const Customers: React.FC = () => {
                   <input
                     type="number"
                     min="1"
+                    inputMode="numeric"
                     required
                     value={jobForm.day_number}
                     onChange={e => setJobForm({ ...jobForm, day_number: e.target.value })}
@@ -941,6 +943,7 @@ const Customers: React.FC = () => {
                     <input
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       required
                       value={jobForm.hours}
                       onChange={e => setJobForm({ ...jobForm, hours: e.target.value })}
@@ -954,6 +957,7 @@ const Customers: React.FC = () => {
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       required
                       value={jobForm.rate_per_hour}
                       onChange={e => setJobForm({ ...jobForm, rate_per_hour: formatIndianNumberString(e.target.value) })}
@@ -968,6 +972,7 @@ const Customers: React.FC = () => {
                     <label className="text-xs font-bold text-slate-400 uppercase">Number of Loads</label>
                     <input
                       type="number"
+                      inputMode="numeric"
                       required
                       value={jobForm.loads}
                       onChange={e => setJobForm({ ...jobForm, loads: e.target.value })}
@@ -979,6 +984,7 @@ const Customers: React.FC = () => {
                     <label className="text-xs font-bold text-slate-400 uppercase">Rate per Load (Rs.)</label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       required
                       value={jobForm.rate_per_load}
                       onChange={e => setJobForm({ ...jobForm, rate_per_load: formatIndianNumberString(e.target.value) })}
@@ -997,27 +1003,30 @@ const Customers: React.FC = () => {
                     <label className="text-[9px] text-slate-400 font-bold uppercase">Food Cost</label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       value={jobForm.food}
                       onChange={e => setJobForm({ ...jobForm, food: formatIndianNumberString(e.target.value) })}
-                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-amber-500 font-semibold"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[9px] text-slate-400 font-bold uppercase">Driver Bata</label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       value={jobForm.bata}
                       onChange={e => setJobForm({ ...jobForm, bata: formatIndianNumberString(e.target.value) })}
-                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-amber-500 font-semibold"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[9px] text-slate-400 font-bold uppercase">Job Diesel</label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       value={jobForm.diesel}
                       onChange={e => setJobForm({ ...jobForm, diesel: formatIndianNumberString(e.target.value) })}
-                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-amber-500 font-semibold"
                     />
                   </div>
                 </div>
@@ -1026,18 +1035,20 @@ const Customers: React.FC = () => {
                     <label className="text-[9px] text-slate-400 font-bold uppercase">Additional Charges</label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       value={jobForm.additional_charges}
                       onChange={e => setJobForm({ ...jobForm, additional_charges: formatIndianNumberString(e.target.value) })}
-                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500 font-semibold"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[9px] text-slate-400 font-bold uppercase">Other Expenses</label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       value={jobForm.other_expenses}
                       onChange={e => setJobForm({ ...jobForm, other_expenses: formatIndianNumberString(e.target.value) })}
-                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500 font-semibold"
                     />
                   </div>
                 </div>
@@ -1375,9 +1386,10 @@ const Customers: React.FC = () => {
                 <label className="text-xs font-bold text-slate-400 uppercase">Amount Paid by Customer (Rs.)</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={jobForm.amount_paid}
                   onChange={e => setJobForm({ ...jobForm, amount_paid: formatIndianNumberString(e.target.value) })}
-                  className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:border-amber-500"
+                  className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:border-amber-500"
                 />
               </div>
               <div className="space-y-1">
