@@ -154,7 +154,7 @@ const Customers: React.FC = () => {
         if (selectedCustomer?.id === updated.id) setSelectedCustomer(updated);
       } else {
         const added = await customersService.addCustomer(customerForm);
-        setCustomers(prev => [...prev, added]);
+        setCustomers(prev => [added, ...prev]);
         if (!selectedCustomer) selectCustomer(added);
       }
       setIsCustomerModalOpen(false);
@@ -1378,16 +1378,34 @@ const Customers: React.FC = () => {
             </div>
 
             {/* Payments received */}
-            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase">Amount Paid by Customer (Rs.)</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={jobForm.amount_paid}
-                  onChange={e => setJobForm({ ...jobForm, amount_paid: formatIndianNumberString(e.target.value) })}
-                  className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:border-amber-500"
-                />
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase">Amount Paid by Customer (Rs.)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={jobForm.amount_paid}
+                    onChange={e => setJobForm({ ...jobForm, amount_paid: formatIndianNumberString(e.target.value) })}
+                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase">Balance Amount (Rs.)</label>
+                  <div className={`w-full rounded-lg px-3 py-2.5 text-sm font-extrabold border ${
+                    getModalBalance() > 0
+                      ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400'
+                      : getModalBalance() < 0
+                        ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 text-amber-600 dark:text-amber-400'
+                        : 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400'
+                  }`}>
+                    {getModalBalance() > 0
+                      ? `${formatCurrency(getModalBalance())} Due`
+                      : getModalBalance() < 0
+                        ? `${formatCurrency(Math.abs(getModalBalance()))} Advance`
+                        : '✓ Fully Paid'}
+                  </div>
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-400 uppercase">Notes / Remarks</label>

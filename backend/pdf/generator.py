@@ -255,36 +255,45 @@ class PDFGenerator:
         ]))
         
         # Totals / Summary Table (Right Column)
-        gross_work = job.total_amount or 0
+        gross_work  = job.total_amount or 0
         excl_diesel = (job.total_expenses or 0) - (job.diesel or 0)
-        diesel_exp = job.diesel or 0
-        balance_val = gross_work + excl_diesel - diesel_exp
-        
+        diesel_exp  = job.diesel or 0
+        amount_paid = job.amount_paid or 0
+        # Balance = Gross Work + Expenses(excl Diesel) - Diesel - Amount Paid
+        balance_due = gross_work + excl_diesel - diesel_exp - amount_paid
+
+        # (label, value_str, is_balance, is_paid, is_deduction)
         totals_rows = [
-            ["Subtotal (Gross Work)", f"Rs. {gross_work:,.2f}"],
-            ["Total Expenses (excl. Diesel)", f"Rs. {excl_diesel:,.2f}"],
-            ["Minus: Diesel Expense", f"Rs. {diesel_exp:,.2f}"],
-            ["Balance", f"Rs. {balance_val:,.2f}"]
+            ("Subtotal (Gross Work)",          f"Rs. {gross_work:,.2f}",   False, False, False),
+            ("Total Expenses (excl. Diesel)",   f"Rs. {excl_diesel:,.2f}", False, False, False),
+            ("Diesel Expense",                  f"Rs. {diesel_exp:,.2f}",   False, False, True ),
+            ("Amount Paid by Customer",         f"Rs. {amount_paid:,.2f}",  False, True,  True ),
+            ("Balance Due",                     f"Rs. {balance_due:,.2f}",  True,  False, False),
         ]
-        
+
         tot_table_data = []
-        for label, val in totals_rows:
-            is_balance = label == "Balance"
+        for label, val, is_balance, is_paid, is_deduction in totals_rows:
             lbl_style = styles['body_bold'] if is_balance else styles['body']
             val_style = styles['right_body_bold'] if is_balance else styles['right_body']
-            
+
             if is_balance:
-                val_style = ParagraphStyle('BalText', parent=val_style, textColor=colors.HexColor('#b91c1c') if balance_val > 0 else colors.HexColor('#16a34a'))
-                
+                bal_color = colors.HexColor('#b91c1c') if balance_due > 0 else colors.HexColor('#16a34a')
+                val_style = ParagraphStyle('BalText', parent=val_style, textColor=bal_color)
+                lbl_style = ParagraphStyle('BalLbl', parent=lbl_style, textColor=bal_color)
+            elif is_paid:
+                val_style = ParagraphStyle('PaidText', parent=val_style, textColor=colors.HexColor('#16a34a'))
+            elif is_deduction:
+                val_style = ParagraphStyle('DeductText', parent=val_style, textColor=colors.HexColor('#b91c1c'))
+
             tot_table_data.append([Paragraph(label, lbl_style), Paragraph(val, val_style)])
-            
+
         tot_table = Table(tot_table_data, colWidths=[2.2 * inch, 1.3 * inch])
         tot_table.setStyle(TableStyle([
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('LINEBELOW', (0,0), (-1,-2), 0.5, colors.HexColor('#e2e8f0')),
-            ('LINEABOVE', (0,-1), (-1,-1), 1, colors.HexColor('#475569')),
-            ('TOPPADDING', (0,0), (-1,-1), 4),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('LINEBELOW',     (0, 0), (-1, -2), 0.5, colors.HexColor('#e2e8f0')),
+            ('LINEABOVE',     (0, -1), (-1, -1), 1,  colors.HexColor('#475569')),
+            ('TOPPADDING',    (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ]))
         
         summary_layout_data = [
