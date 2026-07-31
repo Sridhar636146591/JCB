@@ -1308,8 +1308,6 @@ const Customers: React.FC = () => {
                   let prevVehicle = jobForm.vehicle;
                   let prevDriver = jobForm.driver_id;
                   let prevWorkType = jobForm.work_type;
-                  let prevRatePerHour = jobForm.rate_per_hour;
-                  let prevRatePerLoad = jobForm.rate_per_load;
                   let nextDayNum = (jobForm.days.length + 2).toString();
                   
                   if (jobForm.days.length > 0) {
@@ -1322,8 +1320,6 @@ const Customers: React.FC = () => {
                     prevVehicle = lastDay.vehicle;
                     prevDriver = lastDay.driver_id;
                     prevWorkType = lastDay.work_type;
-                    prevRatePerHour = lastDay.rate_per_hour;
-                    prevRatePerLoad = lastDay.rate_per_load;
                     const lastNum = parseInt(lastDay.day_number);
                     if (!isNaN(lastNum)) {
                       nextDayNum = (lastNum + 1).toString();
@@ -1350,15 +1346,16 @@ const Customers: React.FC = () => {
                         vehicle: prevVehicle,
                         driver_id: prevDriver,
                         work_type: prevWorkType,
+                        // All billing fields start blank — user fills fresh each day
                         hours: '',
-                        rate_per_hour: prevRatePerHour,
+                        rate_per_hour: '',
                         loads: '',
-                        rate_per_load: prevRatePerLoad,
-                        food: '0',
-                        bata: '0',
-                        diesel: '0',
-                        additional_charges: '0',
-                        other_expenses: '0'
+                        rate_per_load: '',
+                        food: '',
+                        bata: '',
+                        diesel: '',
+                        additional_charges: '',
+                        other_expenses: ''
                       }
                     ]
                   });
