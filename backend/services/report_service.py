@@ -3,6 +3,7 @@ from backend.models.customer import CustomerJob, Customer
 from backend.models.driver import DriverPayment, Driver
 from backend.models.fuel import FuelEntry
 from datetime import datetime, date
+from sqlalchemy.orm import joinedload
 
 class ReportService:
     @staticmethod
@@ -35,7 +36,7 @@ class ReportService:
         recent_activities = []
         
         # 5 Recent Jobs
-        recent_jobs = CustomerJob.query.order_by(CustomerJob.created_at.desc()).limit(5).all()
+        recent_jobs = CustomerJob.query.options(joinedload(CustomerJob.customer)).order_by(CustomerJob.created_at.desc()).limit(5).all()
         for job in recent_jobs:
             recent_activities.append({
                 'type': 'job',
@@ -47,7 +48,7 @@ class ReportService:
             })
             
         # 5 Recent Driver Payments
-        recent_payments = DriverPayment.query.order_by(DriverPayment.id.desc()).limit(5).all()
+        recent_payments = DriverPayment.query.options(joinedload(DriverPayment.driver)).order_by(DriverPayment.id.desc()).limit(5).all()
         for payment in recent_payments:
             recent_activities.append({
                 'type': 'driver_payment',

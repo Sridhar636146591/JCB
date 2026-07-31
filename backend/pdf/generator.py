@@ -124,6 +124,32 @@ class PDFGenerator:
         story.append(Spacer(1, 15))
         
         # --- BILL TO & JOB DETAILS ---
+        days_list = job.get_days()
+        vehicles = set(d.get('vehicle', job.vehicle) for d in days_list)
+        vehicle_display = job.vehicle if len(vehicles) <= 1 else "Multiple"
+        
+        from backend.models.driver import Driver
+        try:
+            drivers = {d.id: d.name for d in Driver.query.all()}
+        except Exception:
+            drivers = {}
+        driver_ids = set(d.get('driver_id') for d in days_list)
+        driver_names = []
+        for did in driver_ids:
+            if did:
+                try:
+                    driver_names.append(drivers.get(int(did), 'Owner/None'))
+                except ValueError:
+                    driver_names.append('Owner/None')
+            else:
+                driver_names.append('Owner/None')
+        driver_display = ", ".join(set(driver_names)) if len(driver_names) > 0 else "Owner/None"
+        if len(set(driver_names)) > 1:
+            driver_display = "Multiple"
+            
+        work_types = set(d.get('work_type', job.work_type) for d in days_list)
+        work_type_display = job.work_type.capitalize() if len(work_types) <= 1 else "Multiple"
+        
         details_data = [
             [
                 Paragraph("<b>CUSTOMER DETAILS (BILL TO)</b>", styles['body_bold']),
@@ -131,7 +157,7 @@ class PDFGenerator:
             ],
             [
                 Paragraph(f"Name: {job.customer.name}<br/>Phone: {job.customer.phone}<br/>Village: {job.customer.village}", styles['body']),
-                Paragraph(f"Vehicle: {job.vehicle}<br/>Operator: {job.driver.name if job.driver else 'Owner/None'}<br/>Work Type: {job.work_type.capitalize()} Work<br/>Job Date: {format_date(job.date)}", styles['body'])
+                Paragraph(f"Vehicle: {vehicle_display}<br/>Operator: {driver_display}<br/>Work Type: {work_type_display} Work<br/>Job Date: {format_date(job.date)}", styles['body'])
             ]
         ]
         details_table = Table(details_data, colWidths=[3.75 * inch, 3.75 * inch])
@@ -144,30 +170,47 @@ class PDFGenerator:
         
         # --- WORK DETAILS TABLE ---
         work_headers = [
-            Paragraph("<b>S.No</b>", styles['body_bold']),
+            Paragraph("<b>Days</b>", styles['body_bold']),
             Paragraph("<b>Description</b>", styles['body_bold']),
             Paragraph("<b>Quantity</b>", styles['right_body_bold']),
             Paragraph("<b>Rate</b>", styles['right_body_bold']),
             Paragraph("<b>Amount</b>", styles['right_body_bold'])
         ]
         
-        if job.work_type == 'hourly':
-            qty = f"{job.hours} Hours"
-            rate = f"Rs. {job.rate_per_hour}/Hr"
-        else:
-            qty = f"{job.loads} Loads"
-            rate = f"Rs. {job.rate_per_load}/Load"
+        work_table_data = [work_headers]
+        for idx, d in enumerate(days_list):
+            dt = d.get('date', job.date)
+            wt = d.get('work_type', 'hourly')
+            veh = d.get('vehicle', job.vehicle)
+            day_number = d.get('day_number', idx + 1)
+            day_label = f"Day {day_number}"
             
-        work_row = [
-            Paragraph("1", styles['body']),
-            Paragraph(f"{job.vehicle} Rental Work ({job.work_type.capitalize()})", styles['body']),
-            Paragraph(qty, styles['right_body']),
-            Paragraph(rate, styles['right_body']),
-            Paragraph(f"Rs. {job.total_amount:,.2f}", styles['right_body_bold'])
-        ]
-        
-        work_table_data = [work_headers, work_row]
-        work_table = Table(work_table_data, colWidths=[0.6 * inch, 2.9 * inch, 1.3 * inch, 1.3 * inch, 1.4 * inch])
+            if wt == 'hourly':
+                if veh == 'Tractor':
+                    qty = f"{d.get('hours')} Days"
+                    rate = f"Rs. {d.get('rate_per_hour')}/Day"
+                    desc = f"{veh} Rental Work (Daily)"
+                else:
+                    qty = f"{d.get('hours')} Hours"
+                    rate = f"Rs. {d.get('rate_per_hour')}/Hr"
+                    desc = f"{veh} Rental Work ({wt.capitalize()})"
+                amt = float(d.get('hours') or 0.0) * float(d.get('rate_per_hour') or 0.0)
+            else:
+                qty = f"{d.get('loads')} Loads"
+                rate = f"Rs. {d.get('rate_per_load')}/Load"
+                desc = f"{veh} Rental Work ({wt.capitalize()})"
+                amt = int(d.get('loads') or 0) * float(d.get('rate_per_load') or 0.0)
+                
+            work_row = [
+                Paragraph(day_label, styles['body']),
+                Paragraph(desc, styles['body']),
+                Paragraph(qty, styles['right_body']),
+                Paragraph(rate, styles['right_body']),
+                Paragraph(f"Rs. {amt:,.2f}", styles['right_body_bold'])
+            ]
+            work_table_data.append(work_row)
+            
+        work_table = Table(work_table_data, colWidths=[1.1 * inch, 2.7 * inch, 1.1 * inch, 1.2 * inch, 1.4 * inch])
         work_table.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f1f5f9')),
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),

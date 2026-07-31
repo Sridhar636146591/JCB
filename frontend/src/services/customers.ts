@@ -8,6 +8,24 @@ export interface Customer {
   created_at?: string;
 }
 
+export interface DayEntry {
+  day_number?: number;
+  date: string;
+  vehicle: string;
+  driver_id?: number | string | null;
+  driver_name?: string;
+  work_type: 'hourly' | 'loading';
+  hours?: number;
+  rate_per_hour?: number;
+  loads?: number;
+  rate_per_load?: number;
+  food?: number;
+  bata?: number;
+  diesel?: number;
+  additional_charges?: number;
+  other_expenses?: number;
+}
+
 export interface CustomerJob {
   id: number;
   customer_id: number;
@@ -34,6 +52,7 @@ export interface CustomerJob {
   net_profit?: number;
   balance?: number;
   notes?: string;
+  days?: DayEntry[];
 }
 
 export const customersService = {
@@ -97,5 +116,12 @@ export const customersService = {
     const blob = new Blob([response.data], { type: 'application/pdf' });
     const fileURL = window.URL.createObjectURL(blob);
     window.open(fileURL, '_blank');
+  },
+
+  async getInvoiceBlob(jobId: number): Promise<Blob> {
+    const response = await api.get(`/customers/jobs/${jobId}/pdf`, {
+      responseType: 'blob',
+    });
+    return new Blob([response.data], { type: 'application/pdf' });
   }
 };

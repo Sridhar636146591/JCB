@@ -50,22 +50,107 @@ class CustomerJob(db.Model):
     # Payments
     amount_paid = db.Column(db.Float, nullable=False, default=0.0)
     notes = db.Column(db.String(255), nullable=True)
+    days = db.Column(db.Text, nullable=True) # JSON list of DayEntries
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    def get_days(self):
+        import json
+        if not self.days:
+            return [{
+                'day_number': 1,
+                'date': self.date,
+                'vehicle': self.vehicle,
+                'driver_id': self.driver_id,
+                'work_type': self.work_type,
+                'hours': self.hours or 0.0,
+                'rate_per_hour': self.rate_per_hour or 0.0,
+                'loads': self.loads or 0,
+                'rate_per_load': self.rate_per_load or 0.0,
+                'food': self.food or 0.0,
+                'bata': self.bata or 0.0,
+                'diesel': self.diesel or 0.0,
+                'additional_charges': self.additional_charges or 0.0,
+                'other_expenses': self.other_expenses or 0.0
+            }]
+        try:
+            days_list = json.loads(self.days)
+            for idx, d in enumerate(days_list):
+                if 'day_number' not in d:
+                    d['day_number'] = idx + 1
+                if 'vehicle' not in d:
+                    d['vehicle'] = self.vehicle
+                if 'driver_id' not in d:
+                    d['driver_id'] = self.driver_id
+                if 'work_type' not in d:
+                    d['work_type'] = self.work_type
+                
+                # Check for expenses
+                for field in ['food', 'bata', 'diesel', 'additional_charges', 'other_expenses']:
+                    if field not in d:
+                        d[field] = getattr(self, field) if idx == 0 else 0.0
+            return days_list
+        except Exception:
+            return [{
+                'day_number': 1,
+                'date': self.date,
+                'vehicle': self.vehicle,
+                'driver_id': self.driver_id,
+                'work_type': self.work_type,
+                'hours': self.hours or 0.0,
+                'rate_per_hour': self.rate_per_hour or 0.0,
+                'loads': self.loads or 0,
+                'rate_per_load': self.rate_per_load or 0.0,
+                'food': self.food or 0.0,
+                'bata': self.bata or 0.0,
+                'diesel': self.diesel or 0.0,
+                'additional_charges': self.additional_charges or 0.0,
+                'other_expenses': self.other_expenses or 0.0
+            }]
+
+    def get_days_with_names(self):
+        days_list = self.get_days()
+        from backend.models.driver import Driver
+        try:
+            drivers = {d.id: d.name for d in Driver.query.all()}
+        except Exception:
+            drivers = {}
+        for d in days_list:
+            did = d.get('driver_id')
+            if did:
+                try:
+                    did_int = int(did)
+                    d['driver_name'] = drivers.get(did_int, 'Owner/None')
+                except ValueError:
+                    d['driver_name'] = 'Owner/None'
+            else:
+                d['driver_name'] = 'Owner/None'
+        return days_list
+
     @property
     def total_amount(self):
         """Calculates Gross Amount billed to customer"""
-        if self.work_type == 'hourly':
-            return (self.hours or 0.0) * (self.rate_per_hour or 0.0)
-        elif self.work_type == 'loading':
-            return (self.loads or 0) * (self.rate_per_load or 0.0)
-        return 0.0
+        days_list = self.get_days()
+        total = 0.0
+        for d in days_list:
+            wt = d.get('work_type', 'hourly')
+            if wt == 'hourly':
+                total += (float(d.get('hours') or 0.0)) * (float(d.get('rate_per_hour') or 0.0))
+            elif wt == 'loading':
+                total += (int(d.get('loads') or 0)) * (float(d.get('rate_per_load') or 0.0))
+        return total
         
     @property
     def total_expenses(self):
         """Calculates Total Expenses incurred on the job"""
-        return (self.food or 0.0) + (self.bata or 0.0) + (self.diesel or 0.0) + \
-               (self.additional_charges or 0.0) + (self.other_expenses or 0.0)
+        days_list = self.get_days()
+        return sum(
+            (float(d.get('food') or 0.0) +
+             float(d.get('bata') or 0.0) +
+             float(d.get('diesel') or 0.0) +
+             float(d.get('additional_charges') or 0.0) +
+             float(d.get('other_expenses') or 0.0))
+            for d in days_list
+        )
                
     @property
     def net_profit(self):
@@ -111,5 +196,6 @@ class CustomerJob(db.Model):
             'net_profit': self.net_profit,
             'balance': self.balance,
             'notes': self.notes or '',
+            'days': self.get_days_with_names(),
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

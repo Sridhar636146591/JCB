@@ -97,17 +97,48 @@ def add_customer_job(customer_id):
             return jsonify({'message': 'Driver not found'}), 404
             
     # Extract work specific variables
-    hours = parse_float(data.get('hours'))
-    rate_per_hour = parse_float(data.get('rate_per_hour'))
-    loads = parse_int(data.get('loads'))
-    rate_per_load = parse_float(data.get('rate_per_load'))
+    days = data.get('days')
+    import json
+    days_json = json.dumps(days) if days else None
     
-    # Expenses
-    food = parse_float(data.get('food'), 0.0)
-    bata = parse_float(data.get('bata'), 0.0)
-    diesel = parse_float(data.get('diesel'), 0.0)
-    additional_charges = parse_float(data.get('additional_charges'), 0.0)
-    other_expenses = parse_float(data.get('other_expenses'), 0.0)
+    if days and len(days) > 0:
+        first_day = days[0]
+        date_str = first_day.get('date') or date_str
+        vehicle = first_day.get('vehicle') or vehicle
+        work_type = first_day.get('work_type') or work_type
+        
+        did = first_day.get('driver_id')
+        if did == '' or did is None:
+            driver_id = None
+        else:
+            driver_id = int(did)
+            
+        if work_type == 'hourly':
+            hours = parse_float(first_day.get('hours'))
+            rate_per_hour = parse_float(first_day.get('rate_per_hour'))
+            loads = 0
+            rate_per_load = 0.0
+        else:
+            loads = parse_int(first_day.get('loads'))
+            rate_per_load = parse_float(first_day.get('rate_per_load'))
+            hours = 0.0
+            rate_per_hour = 0.0
+            
+        food = parse_float(first_day.get('food'), 0.0)
+        bata = parse_float(first_day.get('bata'), 0.0)
+        diesel = parse_float(first_day.get('diesel'), 0.0)
+        additional_charges = parse_float(first_day.get('additional_charges'), 0.0)
+        other_expenses = parse_float(first_day.get('other_expenses'), 0.0)
+    else:
+        hours = parse_float(data.get('hours'))
+        rate_per_hour = parse_float(data.get('rate_per_hour'))
+        loads = parse_int(data.get('loads'))
+        rate_per_load = parse_float(data.get('rate_per_load'))
+        food = parse_float(data.get('food'), 0.0)
+        bata = parse_float(data.get('bata'), 0.0)
+        diesel = parse_float(data.get('diesel'), 0.0)
+        additional_charges = parse_float(data.get('additional_charges'), 0.0)
+        other_expenses = parse_float(data.get('other_expenses'), 0.0)
     
     # Payments
     amount_paid = parse_float(data.get('amount_paid'), 0.0)
@@ -129,7 +160,8 @@ def add_customer_job(customer_id):
         additional_charges=additional_charges,
         other_expenses=other_expenses,
         amount_paid=amount_paid,
-        notes=notes
+        notes=notes,
+        days=days_json
     )
     
     db.session.add(job)
@@ -142,39 +174,67 @@ def edit_customer_job(job_id):
     job = CustomerJob.query.get_or_404(job_id)
     data = request.get_json() or {}
     
-    job.date = data.get('date', job.date)
-    job.vehicle = data.get('vehicle', job.vehicle)
-    job.work_type = data.get('work_type', job.work_type)
-    
-    # Check driver
-    driver_id = data.get('driver_id')
-    if driver_id is not None:
-        if driver_id == '':
-            job.driver_id = None
-        else:
-            driver = Driver.query.get(driver_id)
-            if not driver:
-                return jsonify({'message': 'Driver not found'}), 404
-            job.driver_id = driver_id
-            
     # Work Type details
-    if job.work_type == 'hourly':
-        job.hours = parse_float(data.get('hours'), job.hours)
-        job.rate_per_hour = parse_float(data.get('rate_per_hour'), job.rate_per_hour)
-        job.loads = 0
-        job.rate_per_load = 0.0
+    days = data.get('days')
+    if days is not None:
+        import json
+        job.days = json.dumps(days)
+        if len(days) > 0:
+            first_day = days[0]
+            job.date = first_day.get('date', job.date)
+            job.vehicle = first_day.get('vehicle', job.vehicle)
+            job.work_type = first_day.get('work_type', job.work_type)
+            
+            did = first_day.get('driver_id')
+            if did == '' or did is None:
+                job.driver_id = None
+            else:
+                job.driver_id = int(did)
+                
+            if job.work_type == 'hourly':
+                job.hours = parse_float(first_day.get('hours'))
+                job.rate_per_hour = parse_float(first_day.get('rate_per_hour'))
+                job.loads = 0
+                job.rate_per_load = 0.0
+            else:
+                job.loads = parse_int(first_day.get('loads'))
+                job.rate_per_load = parse_float(first_day.get('rate_per_load'))
+                job.hours = 0.0
+                job.rate_per_hour = 0.0
+                
+            job.food = parse_float(first_day.get('food'))
+            job.bata = parse_float(first_day.get('bata'))
+            job.diesel = parse_float(first_day.get('diesel'))
+            job.additional_charges = parse_float(first_day.get('additional_charges'))
+            job.other_expenses = parse_float(first_day.get('other_expenses'))
     else:
-        job.loads = parse_int(data.get('loads'), job.loads)
-        job.rate_per_load = parse_float(data.get('rate_per_load'), job.rate_per_load)
-        job.hours = 0.0
-        job.rate_per_hour = 0.0
-        
-    # Expenses
-    job.food = parse_float(data.get('food'), job.food)
-    job.bata = parse_float(data.get('bata'), job.bata)
-    job.diesel = parse_float(data.get('diesel'), job.diesel)
-    job.additional_charges = parse_float(data.get('additional_charges'), job.additional_charges)
-    job.other_expenses = parse_float(data.get('other_expenses'), job.other_expenses)
+        # Check driver
+        driver_id = data.get('driver_id')
+        if driver_id is not None:
+            if driver_id == '':
+                job.driver_id = None
+            else:
+                driver = Driver.query.get(driver_id)
+                if not driver:
+                    return jsonify({'message': 'Driver not found'}), 404
+                job.driver_id = driver_id
+                
+        if job.work_type == 'hourly':
+            job.hours = parse_float(data.get('hours'), job.hours)
+            job.rate_per_hour = parse_float(data.get('rate_per_hour'), job.rate_per_hour)
+            job.loads = 0
+            job.rate_per_load = 0.0
+        else:
+            job.loads = parse_int(data.get('loads'), job.loads)
+            job.rate_per_load = parse_float(data.get('rate_per_load'), job.rate_per_load)
+            job.hours = 0.0
+            job.rate_per_hour = 0.0
+            
+        job.food = parse_float(data.get('food'), job.food)
+        job.bata = parse_float(data.get('bata'), job.bata)
+        job.diesel = parse_float(data.get('diesel'), job.diesel)
+        job.additional_charges = parse_float(data.get('additional_charges'), job.additional_charges)
+        job.other_expenses = parse_float(data.get('other_expenses'), job.other_expenses)
     
     # Payments
     job.amount_paid = parse_float(data.get('amount_paid'), job.amount_paid)

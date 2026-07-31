@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, 
   Edit, 
@@ -21,6 +21,7 @@ import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '../components/U
 import { formatIndianNumberString, parseIndianNumberString } from '../utils/format';
 
 const Customers: React.FC = () => {
+  const additionalDaysContainerRef = useRef<HTMLDivElement>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [jobs, setJobs] = useState<CustomerJob[]>([]);
@@ -36,12 +37,14 @@ const Customers: React.FC = () => {
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [customerError, setCustomerError] = useState('');
   const [jobError, setJobError] = useState('');
+  const [savingJob, setSavingJob] = useState(false);
   
   // Form states
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [customerForm, setCustomerForm] = useState({ id: null as number | null, name: '', phone: '', village: '' });
   const [jobForm, setJobForm] = useState({
     id: null as number | null,
+    day_number: '1',
     date: '',
     vehicle: 'JCB',
     driver_id: '' as string | number,
@@ -56,7 +59,23 @@ const Customers: React.FC = () => {
     additional_charges: '0',
     other_expenses: '0',
     amount_paid: '0',
-    notes: ''
+    notes: '',
+    days: [] as {
+      day_number: string;
+      date: string;
+      vehicle: string;
+      driver_id: string | number;
+      work_type: 'hourly' | 'loading';
+      hours: string;
+      rate_per_hour: string;
+      loads: string;
+      rate_per_load: string;
+      food: string;
+      bata: string;
+      diesel: string;
+      additional_charges: string;
+      other_expenses: string;
+    }[]
   });
 
   const fetchCustomers = async (searchVal = '') => {
@@ -163,9 +182,11 @@ const Customers: React.FC = () => {
 
   // --- JOB ACTIONS ---
   const handleOpenAddJob = () => {
+    const today = new Date().toISOString().split('T')[0];
     setJobForm({
       id: null,
-      date: new Date().toISOString().split('T')[0],
+      day_number: '1',
+      date: today,
       vehicle: 'JCB',
       driver_id: '',
       work_type: 'hourly',
@@ -179,15 +200,16 @@ const Customers: React.FC = () => {
       additional_charges: '0',
       other_expenses: '0',
       amount_paid: '0',
-      notes: ''
+      notes: '',
+      days: [] // no additional days initially
     });
     setJobError('');
     setIsJobModalOpen(true);
   };
 
   const handleOpenEditJob = (job: CustomerJob) => {
-    setJobForm({
-      id: job.id,
+    let day1 = {
+      day_number: '1',
       date: job.date,
       vehicle: job.vehicle,
       driver_id: job.driver_id || '',
@@ -200,9 +222,68 @@ const Customers: React.FC = () => {
       bata: formatIndianNumberString(job.bata.toString()),
       diesel: formatIndianNumberString(job.diesel.toString()),
       additional_charges: formatIndianNumberString(job.additional_charges.toString()),
-      other_expenses: formatIndianNumberString(job.other_expenses.toString()),
+      other_expenses: formatIndianNumberString(job.other_expenses.toString())
+    };
+    
+    let additionalDays: typeof jobForm.days = [];
+    if (job.days && job.days.length > 0) {
+      // First day is mapped to top level fields
+      const d1 = job.days[0];
+      day1 = {
+        day_number: (d1.day_number !== undefined ? d1.day_number : 1).toString(),
+        date: d1.date,
+        vehicle: d1.vehicle,
+        driver_id: d1.driver_id || '',
+        work_type: d1.work_type,
+        hours: d1.hours?.toString() || '',
+        rate_per_hour: formatIndianNumberString(d1.rate_per_hour?.toString() || ''),
+        loads: d1.loads?.toString() || '',
+        rate_per_load: formatIndianNumberString(d1.rate_per_load?.toString() || ''),
+        food: formatIndianNumberString((d1.food !== undefined ? d1.food : job.food).toString()),
+        bata: formatIndianNumberString((d1.bata !== undefined ? d1.bata : job.bata).toString()),
+        diesel: formatIndianNumberString((d1.diesel !== undefined ? d1.diesel : job.diesel).toString()),
+        additional_charges: formatIndianNumberString((d1.additional_charges !== undefined ? d1.additional_charges : job.additional_charges).toString()),
+        other_expenses: formatIndianNumberString((d1.other_expenses !== undefined ? d1.other_expenses : job.other_expenses).toString())
+      };
+      
+      // Remainder are mapped to jobForm.days
+      additionalDays = job.days.slice(1).map((d, index) => ({
+        day_number: (d.day_number !== undefined ? d.day_number : (index + 2)).toString(),
+        date: d.date,
+        vehicle: d.vehicle,
+        driver_id: d.driver_id || '',
+        work_type: d.work_type,
+        hours: d.hours?.toString() || '',
+        rate_per_hour: formatIndianNumberString(d.rate_per_hour?.toString() || ''),
+        loads: d.loads?.toString() || '',
+        rate_per_load: formatIndianNumberString(d.rate_per_load?.toString() || ''),
+        food: formatIndianNumberString((d.food !== undefined ? d.food : 0).toString()),
+        bata: formatIndianNumberString((d.bata !== undefined ? d.bata : 0).toString()),
+        diesel: formatIndianNumberString((d.diesel !== undefined ? d.diesel : 0).toString()),
+        additional_charges: formatIndianNumberString((d.additional_charges !== undefined ? d.additional_charges : 0).toString()),
+        other_expenses: formatIndianNumberString((d.other_expenses !== undefined ? d.other_expenses : 0).toString())
+      }));
+    }
+
+    setJobForm({
+      id: job.id,
+      day_number: day1.day_number,
+      date: day1.date,
+      vehicle: day1.vehicle,
+      driver_id: day1.driver_id,
+      work_type: day1.work_type,
+      hours: day1.hours,
+      rate_per_hour: day1.rate_per_hour,
+      loads: day1.loads,
+      rate_per_load: day1.rate_per_load,
+      food: day1.food,
+      bata: day1.bata,
+      diesel: day1.diesel,
+      additional_charges: day1.additional_charges,
+      other_expenses: day1.other_expenses,
       amount_paid: formatIndianNumberString(job.amount_paid.toString()),
-      notes: job.notes || ''
+      notes: job.notes || '',
+      days: additionalDays
     });
     setJobError('');
     setIsJobModalOpen(true);
@@ -210,10 +291,15 @@ const Customers: React.FC = () => {
 
   const handleSaveJob = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCustomer) return;
+    if (!selectedCustomer || savingJob) return;
     
-    const jobPayload = {
-      ...jobForm,
+    setSavingJob(true);
+    const day1 = {
+      day_number: parseInt(jobForm.day_number) || 1,
+      date: jobForm.date,
+      vehicle: jobForm.vehicle,
+      driver_id: jobForm.driver_id === '' ? null : jobForm.driver_id,
+      work_type: jobForm.work_type,
       hours: parseFloat(jobForm.hours) || 0,
       rate_per_hour: parseIndianNumberString(jobForm.rate_per_hour) || 0,
       loads: parseInt(jobForm.loads) || 0,
@@ -222,8 +308,52 @@ const Customers: React.FC = () => {
       bata: parseIndianNumberString(jobForm.bata) || 0,
       diesel: parseIndianNumberString(jobForm.diesel) || 0,
       additional_charges: parseIndianNumberString(jobForm.additional_charges) || 0,
-      other_expenses: parseIndianNumberString(jobForm.other_expenses) || 0,
+      other_expenses: parseIndianNumberString(jobForm.other_expenses) || 0
+    };
+    
+    const additionalDays = jobForm.days.map((d, index) => {
+      // Automatically calculate consecutive date starting from Day 1's date
+      const dt = new Date(jobForm.date);
+      if (!isNaN(dt.getTime())) {
+        dt.setDate(dt.getDate() + (index + 1));
+      }
+      const dayDate = !isNaN(dt.getTime()) ? dt.toISOString().split('T')[0] : jobForm.date;
+      
+      return {
+        day_number: parseInt(d.day_number) || (index + 2),
+        date: dayDate,
+        vehicle: d.vehicle,
+        driver_id: d.driver_id === '' ? null : d.driver_id,
+        work_type: d.work_type,
+        hours: parseFloat(d.hours) || 0,
+        rate_per_hour: parseIndianNumberString(d.rate_per_hour) || 0,
+        loads: parseInt(d.loads) || 0,
+        rate_per_load: parseIndianNumberString(d.rate_per_load) || 0,
+        food: parseIndianNumberString(d.food) || 0,
+        bata: parseIndianNumberString(d.bata) || 0,
+        diesel: parseIndianNumberString(d.diesel) || 0,
+        additional_charges: parseIndianNumberString(d.additional_charges) || 0,
+        other_expenses: parseIndianNumberString(d.other_expenses) || 0
+      };
+    });
+    
+    const jobPayload = {
+      ...jobForm,
+      hours: day1.hours,
+      rate_per_hour: day1.rate_per_hour,
+      loads: day1.loads,
+      rate_per_load: day1.rate_per_load,
+      date: day1.date,
+      vehicle: day1.vehicle,
+      driver_id: day1.driver_id,
+      work_type: day1.work_type,
+      food: day1.food,
+      bata: day1.bata,
+      diesel: day1.diesel,
+      additional_charges: day1.additional_charges,
+      other_expenses: day1.other_expenses,
       amount_paid: parseIndianNumberString(jobForm.amount_paid) || 0,
+      days: [day1, ...additionalDays]
     };
     
     setJobError('');
@@ -238,6 +368,8 @@ const Customers: React.FC = () => {
     } catch (err: any) {
       console.error('Error saving job entry', err);
       setJobError(err.response?.data?.message || err.message || 'Failed to save job entry details.');
+    } finally {
+      setSavingJob(false);
     }
   };
 
@@ -269,18 +401,38 @@ const Customers: React.FC = () => {
     }
   };
 
-  const handleShareWhatsApp = (job: CustomerJob) => {
+  const handleShareWhatsApp = async (job: CustomerJob) => {
     if (!job) return;
     const customerName = job.customer_name || 'Customer';
     const date = job.date;
     const vehicle = job.vehicle;
     const workType = job.work_type === 'hourly' ? 'Hourly' : 'Loading/Trip';
-    const qty = job.work_type === 'hourly' ? `${job.hours} Hrs` : `${job.loads} Loads`;
+    const qty = job.days && job.days.length > 1
+      ? `${job.days.length} Days`
+      : (job.work_type === 'hourly' ? `${job.hours} Hrs` : `${job.loads} Loads`);
     const total = job.total_amount || 0;
     const diesel = job.diesel || 0;
     const amountExclDiesel = total - diesel;
     const paid = job.amount_paid || 0;
     const balance = job.balance || 0;
+    
+    // Attempt to share the actual PDF file using the Web Share API (supported on mobile/modern browsers)
+    if (navigator.share && navigator.canShare && job.id) {
+      try {
+        const blob = await customersService.getInvoiceBlob(job.id);
+        const file = new File([blob], `Invoice_${customerName.replace(/\s+/g, '_')}_${date}.pdf`, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `Invoice for ${customerName}`,
+            text: `JCB & Tractor Services Bill for ${customerName}`
+          });
+          return; // Successfully shared file
+        }
+      } catch (shareErr) {
+        console.error('Failed to share PDF file using Web Share API, falling back to text message', shareErr);
+      }
+    }
     
     let text = `*JCB & Tractor Rental Services Bill*\n\n`;
     text += `*Customer:* ${customerName}\n`;
@@ -313,19 +465,44 @@ const Customers: React.FC = () => {
 
   // Live modal math
   const getModalAmount = () => {
+    // Day 1
+    let total = 0;
     if (jobForm.work_type === 'hourly') {
-      return (parseFloat(jobForm.hours) || 0) * (parseIndianNumberString(jobForm.rate_per_hour) || 0);
+      total += (parseFloat(jobForm.hours) || 0) * (parseIndianNumberString(jobForm.rate_per_hour) || 0);
     } else {
-      return (parseInt(jobForm.loads) || 0) * (parseIndianNumberString(jobForm.rate_per_load) || 0);
+      total += (parseInt(jobForm.loads) || 0) * (parseIndianNumberString(jobForm.rate_per_load) || 0);
     }
+    
+    // Additional Days
+    if (jobForm.days && jobForm.days.length > 0) {
+      for (const d of jobForm.days) {
+        if (d.work_type === 'hourly') {
+          total += (parseFloat(d.hours) || 0) * (parseIndianNumberString(d.rate_per_hour) || 0);
+        } else {
+          total += (parseInt(d.loads) || 0) * (parseIndianNumberString(d.rate_per_load) || 0);
+        }
+      }
+    }
+    return total;
   };
 
   const getModalExpenses = () => {
-    return (parseIndianNumberString(jobForm.food) || 0) +
-           (parseIndianNumberString(jobForm.bata) || 0) +
-           (parseIndianNumberString(jobForm.diesel) || 0) +
-           (parseIndianNumberString(jobForm.additional_charges) || 0) +
-           (parseIndianNumberString(jobForm.other_expenses) || 0);
+    let total = (parseIndianNumberString(jobForm.food) || 0) +
+                (parseIndianNumberString(jobForm.bata) || 0) +
+                (parseIndianNumberString(jobForm.diesel) || 0) +
+                (parseIndianNumberString(jobForm.additional_charges) || 0) +
+                (parseIndianNumberString(jobForm.other_expenses) || 0);
+                
+    if (jobForm.days && jobForm.days.length > 0) {
+      for (const d of jobForm.days) {
+        total += (parseIndianNumberString(d.food) || 0) +
+                 (parseIndianNumberString(d.bata) || 0) +
+                 (parseIndianNumberString(d.diesel) || 0) +
+                 (parseIndianNumberString(d.additional_charges) || 0) +
+                 (parseIndianNumberString(d.other_expenses) || 0);
+      }
+    }
+    return total;
   };
 
   const getModalProfit = () => {
@@ -512,10 +689,13 @@ const Customers: React.FC = () => {
                             <div>
                               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Work details</p>
                               <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                                {job.work_type === 'hourly' 
-                                  ? `${job.hours} Hrs @ ${formatCurrency(job.rate_per_hour || 0)}` 
-                                  : `${job.loads} Loads @ ${formatCurrency(job.rate_per_load || 0)}`
-                                }
+                                {job.days && job.days.length > 1 ? (
+                                  <span>{job.days.length} Days of Work</span>
+                                ) : (
+                                  job.work_type === 'hourly' 
+                                    ? `${job.hours} Hrs @ ${formatCurrency(job.rate_per_hour || 0)}` 
+                                    : `${job.loads} Loads @ ${formatCurrency(job.rate_per_load || 0)}`
+                                )}
                               </p>
                             </div>
                             <div>
@@ -673,7 +853,7 @@ const Customers: React.FC = () => {
 
       {/* --- ADD/EDIT JOB SHEET MODAL --- */}
       <Dialog isOpen={isJobModalOpen} onClose={() => setIsJobModalOpen(false)}>
-        <form onSubmit={handleSaveJob} className="max-h-[80vh] flex flex-col">
+        <form onSubmit={handleSaveJob} className="">
           <DialogHeader>
             <DialogTitle>{jobForm.id ? 'Modify Job Entry' : 'Record New Job Billing'}</DialogTitle>
           </DialogHeader>
@@ -683,167 +863,510 @@ const Customers: React.FC = () => {
               <span>{jobError}</span>
             </div>
           )}
-          <div className="space-y-4 py-2 text-left overflow-y-auto flex-1 pr-1">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase">Date</label>
-                <input
-                  type="date"
-                  required
-                  value={jobForm.date}
-                  onChange={e => setJobForm({ ...jobForm, date: e.target.value })}
-                  className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase">Vehicle</label>
-                <select
-                  value={jobForm.vehicle}
-                  onChange={e => setJobForm({ ...jobForm, vehicle: e.target.value })}
-                  className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 dark:text-slate-100"
-                >
-                  <option value="JCB" className="dark:bg-slate-900">JCB</option>
-                  <option value="Tractor" className="dark:bg-slate-900">Tractor</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase">Driver / Operator</label>
-                <select
-                  value={jobForm.driver_id}
-                  onChange={e => setJobForm({ ...jobForm, driver_id: e.target.value })}
-                  className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 dark:text-slate-100"
-                >
-                  <option value="" className="dark:bg-slate-900">Owner Driven / None</option>
-                  {drivers.map(d => (
-                    <option key={d.id} value={d.id} className="dark:bg-slate-900">{d.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase">Work Billing Type</label>
-                <select
-                  value={jobForm.work_type}
-                  onChange={e => setJobForm({ ...jobForm, work_type: e.target.value as any })}
-                  className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 dark:text-slate-100"
-                >
-                  <option value="hourly" className="dark:bg-slate-900">Hourly billing</option>
-                  <option value="loading" className="dark:bg-slate-900">Loading / Trip billing</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Hourly details */}
-            {jobForm.work_type === 'hourly' && (
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/50 dark:border-slate-800/40 animate-in fade-in duration-150">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Total Hours</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={jobForm.hours}
-                    onChange={e => setJobForm({ ...jobForm, hours: e.target.value })}
-                    placeholder="e.g. 5.5"
-                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Rate per Hour (Rs.)</label>
-                  <input
-                    type="text"
-                    required
-                    value={jobForm.rate_per_hour}
-                    onChange={e => setJobForm({ ...jobForm, rate_per_hour: formatIndianNumberString(e.target.value) })}
-                    placeholder="e.g. 800"
-                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Loading details */}
-            {jobForm.work_type === 'loading' && (
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/50 dark:border-slate-800/40 animate-in fade-in duration-150">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Number of Loads</label>
-                  <input
-                    type="number"
-                    required
-                    value={jobForm.loads}
-                    onChange={e => setJobForm({ ...jobForm, loads: e.target.value })}
-                    placeholder="e.g. 10"
-                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Rate per Load (Rs.)</label>
-                  <input
-                    type="text"
-                    required
-                    value={jobForm.rate_per_load}
-                    onChange={e => setJobForm({ ...jobForm, rate_per_load: formatIndianNumberString(e.target.value) })}
-                    placeholder="e.g. 200"
-                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Expenses */}
-            <div className="space-y-3">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Job Operating Expenses</label>
+          <div className="space-y-4 py-2 text-left pr-1">
+            {/* Section 1: Day 1 Details */}
+            <div className="bg-slate-50 dark:bg-slate-950/40 p-4 rounded-xl border border-slate-200/50 dark:border-slate-800/40 space-y-3">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Day {jobForm.day_number} Details</span>
+              
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase">Food Cost</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Day</label>
                   <input
-                    type="text"
-                    value={jobForm.food}
-                    onChange={e => setJobForm({ ...jobForm, food: formatIndianNumberString(e.target.value) })}
-                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                    type="number"
+                    min="1"
+                    required
+                    value={jobForm.day_number}
+                    onChange={e => setJobForm({ ...jobForm, day_number: e.target.value })}
+                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 font-semibold"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase">Driver Bata</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase">Date</label>
                   <input
-                    type="text"
-                    value={jobForm.bata}
-                    onChange={e => setJobForm({ ...jobForm, bata: formatIndianNumberString(e.target.value) })}
-                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                    type="date"
+                    required
+                    value={jobForm.date}
+                    onChange={e => setJobForm({ ...jobForm, date: e.target.value })}
+                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 font-semibold"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase">Job Diesel</label>
-                  <input
-                    type="text"
-                    value={jobForm.diesel}
-                    onChange={e => setJobForm({ ...jobForm, diesel: formatIndianNumberString(e.target.value) })}
-                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500"
-                  />
+                  <label className="text-xs font-bold text-slate-400 uppercase">Vehicle</label>
+                  <select
+                    value={jobForm.vehicle}
+                    onChange={e => setJobForm({ ...jobForm, vehicle: e.target.value })}
+                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 dark:text-slate-100 font-semibold"
+                  >
+                    <option value="JCB" className="dark:bg-slate-900">JCB</option>
+                    <option value="Tractor" className="dark:bg-slate-900">Tractor</option>
+                  </select>
                 </div>
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase">Additional Charges</label>
-                  <input
-                    type="text"
-                    value={jobForm.additional_charges}
-                    onChange={e => setJobForm({ ...jobForm, additional_charges: formatIndianNumberString(e.target.value) })}
-                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500"
-                  />
+                  <label className="text-xs font-bold text-slate-400 uppercase">Driver / Operator</label>
+                  <select
+                    value={jobForm.driver_id}
+                    onChange={e => setJobForm({ ...jobForm, driver_id: e.target.value })}
+                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 dark:text-slate-100 font-semibold"
+                  >
+                    <option value="" className="dark:bg-slate-900">Owner Driven / None</option>
+                    {drivers.map(d => (
+                      <option key={d.id} value={d.id} className="dark:bg-slate-900">{d.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase">Other Expenses</label>
-                  <input
-                    type="text"
-                    value={jobForm.other_expenses}
-                    onChange={e => setJobForm({ ...jobForm, other_expenses: formatIndianNumberString(e.target.value) })}
-                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500"
-                  />
+                  <label className="text-xs font-bold text-slate-400 uppercase">Work Billing Type</label>
+                  <select
+                    value={jobForm.work_type}
+                    onChange={e => setJobForm({ ...jobForm, work_type: e.target.value as any })}
+                    className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 dark:text-slate-100 font-semibold"
+                  >
+                    <option value="hourly" className="dark:bg-slate-900">
+                      {jobForm.vehicle === 'Tractor' ? 'Daily billing' : 'Hourly billing'}
+                    </option>
+                    <option value="loading" className="dark:bg-slate-900">Loading / Trip billing</option>
+                  </select>
                 </div>
               </div>
+
+              {jobForm.work_type === 'hourly' ? (
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">
+                      {jobForm.vehicle === 'Tractor' ? 'Total Days' : 'Total Hours'}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={jobForm.hours}
+                      onChange={e => setJobForm({ ...jobForm, hours: e.target.value })}
+                      placeholder={jobForm.vehicle === 'Tractor' ? 'e.g. 5' : 'e.g. 5.5'}
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 font-semibold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">
+                      {jobForm.vehicle === 'Tractor' ? 'Rate per Day (Rs.)' : 'Rate per Hour (Rs.)'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={jobForm.rate_per_hour}
+                      onChange={e => setJobForm({ ...jobForm, rate_per_hour: formatIndianNumberString(e.target.value) })}
+                      placeholder={jobForm.vehicle === 'Tractor' ? 'e.g. 3000' : 'e.g. 800'}
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 font-semibold"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">Number of Loads</label>
+                    <input
+                      type="number"
+                      required
+                      value={jobForm.loads}
+                      onChange={e => setJobForm({ ...jobForm, loads: e.target.value })}
+                      placeholder="e.g. 10"
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">Rate per Load (Rs.)</label>
+                    <input
+                      type="text"
+                      required
+                      value={jobForm.rate_per_load}
+                      onChange={e => setJobForm({ ...jobForm, rate_per_load: formatIndianNumberString(e.target.value) })}
+                      placeholder="e.g. 200"
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Day 1 Expenses */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Day 1 Operating Expenses</span>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-slate-400 font-bold uppercase">Food Cost</label>
+                    <input
+                      type="text"
+                      value={jobForm.food}
+                      onChange={e => setJobForm({ ...jobForm, food: formatIndianNumberString(e.target.value) })}
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-slate-400 font-bold uppercase">Driver Bata</label>
+                    <input
+                      type="text"
+                      value={jobForm.bata}
+                      onChange={e => setJobForm({ ...jobForm, bata: formatIndianNumberString(e.target.value) })}
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-slate-400 font-bold uppercase">Job Diesel</label>
+                    <input
+                      type="text"
+                      value={jobForm.diesel}
+                      onChange={e => setJobForm({ ...jobForm, diesel: formatIndianNumberString(e.target.value) })}
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-slate-400 font-bold uppercase">Additional Charges</label>
+                    <input
+                      type="text"
+                      value={jobForm.additional_charges}
+                      onChange={e => setJobForm({ ...jobForm, additional_charges: formatIndianNumberString(e.target.value) })}
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-slate-400 font-bold uppercase">Other Expenses</label>
+                    <input
+                      type="text"
+                      value={jobForm.other_expenses}
+                      onChange={e => setJobForm({ ...jobForm, other_expenses: formatIndianNumberString(e.target.value) })}
+                      className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Days Section */}
+            {jobForm.days && jobForm.days.length > 0 && (
+              <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-left">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Additional Days Worked</label>
+                <div ref={additionalDaysContainerRef} className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                  {jobForm.days.map((day, index) => (
+                    <div key={index} className="bg-slate-50/50 dark:bg-slate-950/20 p-4 rounded-xl border border-slate-200/50 dark:border-slate-800/40 space-y-3 relative">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Day {day.day_number} Details</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newDays = [...jobForm.days];
+                            newDays.splice(index, 1);
+                            setJobForm({ ...jobForm, days: newDays });
+                          }}
+                          className="text-rose-500 hover:text-rose-605 text-xs font-bold cursor-pointer"
+                        >
+                          Remove Day
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Day</label>
+                          <input
+                            type="number"
+                            min="1"
+                            required
+                            value={day.day_number}
+                            onChange={e => {
+                              const newDays = [...jobForm.days];
+                              newDays[index].day_number = e.target.value;
+                              setJobForm({ ...jobForm, days: newDays });
+                            }}
+                            className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Vehicle</label>
+                          <select
+                            value={day.vehicle}
+                            onChange={e => {
+                              const newDays = [...jobForm.days];
+                              newDays[index].vehicle = e.target.value;
+                              setJobForm({ ...jobForm, days: newDays });
+                            }}
+                            className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500 dark:text-slate-100 font-semibold"
+                          >
+                            <option value="JCB" className="dark:bg-slate-900">JCB</option>
+                            <option value="Tractor" className="dark:bg-slate-900">Tractor</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Driver / Operator</label>
+                          <select
+                            value={day.driver_id}
+                            onChange={e => {
+                              const newDays = [...jobForm.days];
+                              newDays[index].driver_id = e.target.value;
+                              setJobForm({ ...jobForm, days: newDays });
+                            }}
+                            className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500 dark:text-slate-100 font-semibold"
+                          >
+                            <option value="" className="dark:bg-slate-900">Owner Driven / None</option>
+                            {drivers.map(d => (
+                              <option key={d.id} value={d.id} className="dark:bg-slate-900">{d.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Work Billing Type</label>
+                          <select
+                            value={day.work_type}
+                            onChange={e => {
+                              const newDays = [...jobForm.days];
+                              newDays[index].work_type = e.target.value as any;
+                              setJobForm({ ...jobForm, days: newDays });
+                            }}
+                            className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500 dark:text-slate-100 font-semibold"
+                          >
+                            <option value="hourly" className="dark:bg-slate-900">
+                              {day.vehicle === 'Tractor' ? 'Daily billing' : 'Hourly billing'}
+                            </option>
+                            <option value="loading" className="dark:bg-slate-900">Loading / Trip billing</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {day.work_type === 'hourly' ? (
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">
+                              {day.vehicle === 'Tractor' ? 'Total Days' : 'Total Hours'}
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              required
+                              value={day.hours}
+                              onChange={e => {
+                                const newDays = [...jobForm.days];
+                                newDays[index].hours = e.target.value;
+                                setJobForm({ ...jobForm, days: newDays });
+                              }}
+                              placeholder={day.vehicle === 'Tractor' ? 'e.g. 5' : 'e.g. 5.5'}
+                              className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">
+                              {day.vehicle === 'Tractor' ? 'Rate/Day (Rs.)' : 'Rate/Hour (Rs.)'}
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={day.rate_per_hour}
+                              onChange={e => {
+                                const newDays = [...jobForm.days];
+                                newDays[index].rate_per_hour = formatIndianNumberString(e.target.value);
+                                setJobForm({ ...jobForm, days: newDays });
+                              }}
+                              placeholder={day.vehicle === 'Tractor' ? 'e.g. 3000' : 'e.g. 800'}
+                              className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Loads</label>
+                            <input
+                              type="number"
+                              required
+                              value={day.loads}
+                              onChange={e => {
+                                const newDays = [...jobForm.days];
+                                newDays[index].loads = e.target.value;
+                                setJobForm({ ...jobForm, days: newDays });
+                              }}
+                              placeholder="e.g. 10"
+                              className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Rate/Load (Rs.)</label>
+                            <input
+                              type="text"
+                              required
+                              value={day.rate_per_load}
+                              onChange={e => {
+                                const newDays = [...jobForm.days];
+                                newDays[index].rate_per_load = formatIndianNumberString(e.target.value);
+                                setJobForm({ ...jobForm, days: newDays });
+                              }}
+                              placeholder="e.g. 200"
+                              className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Day Expenses */}
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Day {index + 2} Operating Expenses</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[9px] text-slate-400 font-bold uppercase">Food Cost</label>
+                            <input
+                              type="text"
+                              value={day.food}
+                              onChange={e => {
+                                const newDays = [...jobForm.days];
+                                newDays[index].food = formatIndianNumberString(e.target.value);
+                                setJobForm({ ...jobForm, days: newDays });
+                              }}
+                              className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] text-slate-400 font-bold uppercase">Driver Bata</label>
+                            <input
+                              type="text"
+                              value={day.bata}
+                              onChange={e => {
+                                const newDays = [...jobForm.days];
+                                newDays[index].bata = formatIndianNumberString(e.target.value);
+                                setJobForm({ ...jobForm, days: newDays });
+                              }}
+                              className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] text-slate-400 font-bold uppercase">Job Diesel</label>
+                            <input
+                              type="text"
+                              value={day.diesel}
+                              onChange={e => {
+                                const newDays = [...jobForm.days];
+                                newDays[index].diesel = formatIndianNumberString(e.target.value);
+                                setJobForm({ ...jobForm, days: newDays });
+                              }}
+                              className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[9px] text-slate-400 font-bold uppercase">Additional Charges</label>
+                            <input
+                              type="text"
+                              value={day.additional_charges}
+                              onChange={e => {
+                                const newDays = [...jobForm.days];
+                                newDays[index].additional_charges = formatIndianNumberString(e.target.value);
+                                setJobForm({ ...jobForm, days: newDays });
+                              }}
+                              className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] text-slate-400 font-bold uppercase">Other Expenses</label>
+                            <input
+                              type="text"
+                              value={day.other_expenses}
+                              onChange={e => {
+                                const newDays = [...jobForm.days];
+                                newDays[index].other_expenses = formatIndianNumberString(e.target.value);
+                                setJobForm({ ...jobForm, days: newDays });
+                              }}
+                              className="w-full border border-slate-200 dark:border-slate-800 bg-transparent rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-amber-500 font-semibold"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* + Add Day Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  let nextDate = new Date().toISOString().split('T')[0];
+                  let prevVehicle = jobForm.vehicle;
+                  let prevDriver = jobForm.driver_id;
+                  let prevWorkType = jobForm.work_type;
+                  let prevRatePerHour = jobForm.rate_per_hour;
+                  let prevRatePerLoad = jobForm.rate_per_load;
+                  let nextDayNum = (jobForm.days.length + 2).toString();
+                  
+                  if (jobForm.days.length > 0) {
+                    const lastDay = jobForm.days[jobForm.days.length - 1];
+                    const lastDate = new Date(lastDay.date);
+                    if (!isNaN(lastDate.getTime())) {
+                      lastDate.setDate(lastDate.getDate() + 1);
+                      nextDate = lastDate.toISOString().split('T')[0];
+                    }
+                    prevVehicle = lastDay.vehicle;
+                    prevDriver = lastDay.driver_id;
+                    prevWorkType = lastDay.work_type;
+                    prevRatePerHour = lastDay.rate_per_hour;
+                    prevRatePerLoad = lastDay.rate_per_load;
+                    const lastNum = parseInt(lastDay.day_number);
+                    if (!isNaN(lastNum)) {
+                      nextDayNum = (lastNum + 1).toString();
+                    }
+                  } else {
+                    const lastDate = new Date(jobForm.date);
+                    if (!isNaN(lastDate.getTime())) {
+                      lastDate.setDate(lastDate.getDate() + 1);
+                      nextDate = lastDate.toISOString().split('T')[0];
+                    }
+                    const lastNum = parseInt(jobForm.day_number);
+                    if (!isNaN(lastNum)) {
+                      nextDayNum = (lastNum + 1).toString();
+                    }
+                  }
+                  
+                  setJobForm({
+                    ...jobForm,
+                    days: [
+                      ...jobForm.days,
+                      {
+                        day_number: nextDayNum,
+                        date: nextDate,
+                        vehicle: prevVehicle,
+                        driver_id: prevDriver,
+                        work_type: prevWorkType,
+                        hours: '',
+                        rate_per_hour: prevRatePerHour,
+                        loads: '',
+                        rate_per_load: prevRatePerLoad,
+                        food: '0',
+                        bata: '0',
+                        diesel: '0',
+                        additional_charges: '0',
+                        other_expenses: '0'
+                      }
+                    ]
+                  });
+                  
+                  if (jobForm.days.length >= 1) {
+                    setTimeout(() => {
+                      if (additionalDaysContainerRef.current) {
+                        additionalDaysContainerRef.current.scrollTo({
+                          top: additionalDaysContainerRef.current.scrollHeight,
+                          behavior: 'smooth'
+                        });
+                      }
+                    }, 100);
+                  }
+                }}
+                className="w-full py-2 border border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 dark:hover:border-amber-500 rounded-xl text-xs font-bold text-slate-500 hover:text-amber-500 transition cursor-pointer bg-slate-50/50 dark:bg-slate-950/20"
+              >
+                + Add Day
+              </button>
             </div>
 
             {/* Payments received */}
@@ -891,9 +1414,12 @@ const Customers: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-lg hover:bg-amber-600 transition cursor-pointer"
+              disabled={savingJob}
+              className={`px-4 py-2 font-bold rounded-lg transition cursor-pointer ${
+                savingJob ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-amber-500 text-slate-950 hover:bg-amber-600'
+              }`}
             >
-              Save Job Bill
+              {savingJob ? 'Saving...' : 'Save Job Bill'}
             </button>
           </DialogFooter>
         </form>

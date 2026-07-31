@@ -57,6 +57,25 @@ def create_app():
     with app.app_context():
         db.create_all()
         
+        # Check if 'days' column exists in 'customer_jobs' table (SQLite check/alter)
+        from sqlalchemy import text
+        try:
+            columns = db.session.execute(text("PRAGMA table_info(customer_jobs)")).fetchall()
+            column_names = [col[1] for col in columns]
+            if 'days' not in column_names:
+                db.session.execute(text("ALTER TABLE customer_jobs ADD COLUMN days TEXT"))
+                db.session.commit()
+                print("Database migrated: added 'days' column to 'customer_jobs'.")
+            
+            # Create indexes on date columns for maximum performance
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_customer_jobs_date ON customer_jobs(date)"))
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_driver_payments_date ON driver_payments(date)"))
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_fuel_entries_date ON fuel_entries(date)"))
+            db.session.commit()
+            print("Database migrated: created indexes on date columns.")
+        except Exception as e:
+            print(f"Database schema migration failed or skipped: {e}")
+        
         # Seed default admin user if no users exist
         from backend.models.user import User
         if User.query.count() == 0:
