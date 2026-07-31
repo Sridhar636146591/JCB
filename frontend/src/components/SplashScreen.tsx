@@ -111,6 +111,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
   const verifyPin = (enteredPin: string) => {
     if (enteredPin === '3121') {
       setIsSuccess(true);
+      // Success haptic (single short buzz)
+      if (navigator.vibrate) navigator.vibrate(80);
       setTimeout(() => {
         setIsFadingOut(true);
         setTimeout(() => {
@@ -118,8 +120,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
         }, 600);
       }, 500);
     } else {
+      // Wrong PIN — shake + double vibration buzz
       setIsShaking(true);
       setPinError(true);
+      if (navigator.vibrate) navigator.vibrate([100, 60, 100, 60, 100]);
       setTimeout(() => {
         setPin('');
         setIsShaking(false);
