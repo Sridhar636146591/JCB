@@ -30,9 +30,7 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      if (window.location.pathname !== '/') {
-        window.location.href = '/';
-      }
+      window.location.reload();
     }
     return Promise.reject(error);
   }
