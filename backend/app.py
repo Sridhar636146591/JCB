@@ -18,6 +18,10 @@ from backend.routes.customers import customers_bp
 from backend.routes.fuel import fuel_bp
 from backend.routes.reports import reports_bp
 
+def get_db_dialect(db):
+    """Returns 'postgresql' or 'sqlite' based on the connected DB engine."""
+    return db.engine.dialect.name
+
 def create_app():
     app = Flask(__name__)
     
@@ -57,33 +61,62 @@ def create_app():
     with app.app_context():
         db.create_all()
         
-        # Check if 'days' column exists in 'customer_jobs' table (SQLite check/alter)
         from sqlalchemy import text
+
+        dialect = get_db_dialect(db)
+
+        # ── 1. Ensure 'days' column exists in customer_jobs ─────────────────
         try:
-            columns = db.session.execute(text("PRAGMA table_info(customer_jobs)")).fetchall()
-            column_names = [col[1] for col in columns]
-            if 'days' not in column_names:
-                db.session.execute(text("ALTER TABLE customer_jobs ADD COLUMN days TEXT"))
-                db.session.commit()
-                print("Database migrated: added 'days' column to 'customer_jobs'.")
-            
-            # Create indexes on date columns for maximum performance
-            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_customer_jobs_date ON customer_jobs(date)"))
-            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_driver_payments_date ON driver_payments(date)"))
-            db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_fuel_entries_date ON fuel_entries(date)"))
-            db.session.commit()
-            print("Database migrated: created indexes on date columns.")
+            if dialect == 'postgresql':
+                # PostgreSQL: use information_schema (standard SQL)
+                result = db.session.execute(text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = 'customer_jobs' AND column_name = 'days'"
+                )).fetchone()
+                if result is None:
+                    db.session.execute(text("ALTER TABLE customer_jobs ADD COLUMN days TEXT"))
+                    db.session.commit()
+                    print("DB migrated: added 'days' column to customer_jobs (PostgreSQL).")
+            else:
+                # SQLite: use PRAGMA
+                columns = db.session.execute(text("PRAGMA table_info(customer_jobs)")).fetchall()
+                column_names = [col[1] for col in columns]
+                if 'days' not in column_names:
+                    db.session.execute(text("ALTER TABLE customer_jobs ADD COLUMN days TEXT"))
+                    db.session.commit()
+                    print("DB migrated: added 'days' column to customer_jobs (SQLite).")
         except Exception as e:
-            print(f"Database schema migration failed or skipped: {e}")
-        
-        # Seed default admin user if no users exist
-        from backend.models.user import User
-        if User.query.count() == 0:
-            admin_user = User(username='admin')
-            admin_user.set_password('admin123')
-            db.session.add(admin_user)
+            db.session.rollback()
+            print(f"Column migration skipped (column may already exist): {e}")
+
+        # ── 2. Create performance indexes ────────────────────────────────────
+        try:
+            if dialect == 'postgresql':
+                db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_customer_jobs_date ON customer_jobs(date)"))
+                db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_driver_payments_date ON driver_payments(date)"))
+                db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_fuel_entries_date ON fuel_entries(date)"))
+            else:
+                db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_customer_jobs_date ON customer_jobs(date)"))
+                db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_driver_payments_date ON driver_payments(date)"))
+                db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_fuel_entries_date ON fuel_entries(date)"))
             db.session.commit()
-            print("Database initialized and default owner account seeded (admin / admin123).")
+            print("DB indexes created/verified.")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Index creation skipped (may already exist): {e}")
+
+        # ── 3. Seed default admin user ───────────────────────────────────────
+        try:
+            from backend.models.user import User
+            if User.query.count() == 0:
+                admin_user = User(username='admin')
+                admin_user.set_password('admin123')
+                db.session.add(admin_user)
+                db.session.commit()
+                print("Default admin user seeded (admin / admin123).")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Admin seed skipped: {e}")
             
     return app
 
