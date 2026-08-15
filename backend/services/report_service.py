@@ -2,7 +2,7 @@ from backend.database.connection import db
 from backend.models.customer import CustomerJob, Customer
 from backend.models.driver import DriverPayment, Driver
 from backend.models.fuel import FuelEntry
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from sqlalchemy.orm import joinedload
 
 class ReportService:
@@ -75,6 +75,28 @@ class ReportService:
         recent_activities.sort(key=lambda x: x['date'], reverse=True)
         recent_activities = recent_activities[:10]
         
+        # --- LAST 7 DAYS TREND ---
+        daily_trend = []
+        for i in range(6, -1, -1):
+            day = date.today() - timedelta(days=i)
+            day_str = day.strftime('%Y-%m-%d')
+            day_label = day.strftime('%d %b')
+
+            day_jobs = CustomerJob.query.filter(CustomerJob.date == day_str).all()
+            day_income = sum(job.total_amount for job in day_jobs)
+            day_job_expenses = sum(job.total_expenses for job in day_jobs)
+            day_driver_payments = sum(p.amount for p in DriverPayment.query.filter(DriverPayment.date == day_str).all())
+            day_fuel = sum(f.total_cost for f in FuelEntry.query.filter(FuelEntry.date == day_str).all())
+            day_expenses = day_job_expenses + day_driver_payments + day_fuel
+            day_profit = day_income - day_expenses
+
+            daily_trend.append({
+                'day': day_label,
+                'Income': round(day_income, 2),
+                'Expenses': round(day_expenses, 2),
+                'Profit': round(day_profit, 2),
+            })
+
         return {
             'today': {
                 'income': round(today_income, 2),
@@ -86,7 +108,8 @@ class ReportService:
                 'expenses': round(month_expenses, 2),
                 'profit': round(month_profit, 2)
             },
-            'recent_activities': recent_activities
+            'recent_activities': recent_activities,
+            'daily_trend': daily_trend
         }
         
     @staticmethod
