@@ -17,13 +17,7 @@ import {
   Truck
 } from 'lucide-react';
 import { reportsService } from '../services/reports';
-import {
-  BarChart, Bar,
-  LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, Area, AreaChart,
-  defs, linearGradient, stop
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 // Skeleton pulse block
 const Skeleton: React.FC<{ className?: string }> = ({ className = '' }) => (
@@ -379,7 +373,7 @@ const Dashboard: React.FC = () => {
                         fontWeight: '600',
                         boxShadow: '0 4px 24px rgba(0,0,0,0.08)'
                       }}
-                      formatter={(value: number) => [`Rs. ${value.toLocaleString('en-IN')}`, undefined]}
+                      formatter={(value: any) => [`Rs. ${Number(value).toLocaleString('en-IN')}`, undefined]}
                     />
                     <Area
                       type="monotone"
