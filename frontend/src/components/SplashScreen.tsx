@@ -29,12 +29,12 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
           clearInterval(interval);
           return 100;
         }
-        // Random incremental jumps
-        const step = Math.floor(Math.random() * 8) + 4;
+        // Faster incremental jumps
+        const step = Math.floor(Math.random() * 15) + 10;
         const next = prev + step;
         return next > 100 ? 100 : next;
       });
-    }, 120);
+    }, 60);
 
     return () => clearInterval(interval);
   }, [progress, error]);
@@ -78,11 +78,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinished }) => {
         setShowPin(true);
       };
 
-      const fadeTimeout = setTimeout(() => {
-        authAndPrepare();
-      }, 500);
-
-      return () => clearTimeout(fadeTimeout);
+      authAndPrepare();
     }
   }, [progress, error]);
 

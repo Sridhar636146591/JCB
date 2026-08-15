@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000, // 15 second timeout — fail fast instead of hanging
 });
 
 // Request interceptor to attach JWT token
@@ -35,5 +36,14 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Keep-alive ping: hits /auth/me every 10 minutes to prevent Render cold starts
+const startKeepAlive = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  api.get('/auth/me').catch(() => {}); // silent ping
+};
+
+setInterval(startKeepAlive, 10 * 60 * 1000); // every 10 minutes
 
 export default api;
