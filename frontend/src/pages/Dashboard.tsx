@@ -35,11 +35,34 @@ const Dashboard: React.FC = () => {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError('');
-      const res = await reportsService.getDashboard();
-      setData(res);
+      
+      // Retry loop for Render free-tier cold starts
+      let attempts = 0;
+      let success = false;
+      let res = null;
+      
+      while (attempts < 3 && !success) {
+        try {
+          res = await reportsService.getDashboard();
+          success = true;
+        } catch (err: any) {
+          attempts++;
+          if (attempts < 3) {
+            setError('Server is waking up (Render Free Tier)... Retrying automatically...');
+            await new Promise(r => setTimeout(r, 4000));
+          } else {
+            throw err;
+          }
+        }
+      }
+      
+      if (success && res) {
+        setData(res);
+        setError('');
+      }
     } catch (err: any) {
       console.error(err);
-      setError('Failed to fetch dashboard statistics.');
+      setError('Failed to connect to server. Please click "Try Again" to reload dashboard.');
     } finally {
       setLoading(false);
       setRefreshing(false);
