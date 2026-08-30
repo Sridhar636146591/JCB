@@ -75,18 +75,27 @@ class ReportService:
         recent_activities.sort(key=lambda x: x['date'], reverse=True)
         recent_activities = recent_activities[:10]
         
-        # --- LAST 7 DAYS TREND ---
+        # --- LAST 7 DAYS TREND (OPTIMIZED BULK QUERY) ---
+        start_7days = (date.today() - timedelta(days=6)).strftime('%Y-%m-%d')
+        trend_jobs = CustomerJob.query.filter(CustomerJob.date >= start_7days).all()
+        trend_payments = DriverPayment.query.filter(DriverPayment.date >= start_7days).all()
+        trend_fuels = FuelEntry.query.filter(FuelEntry.date >= start_7days).all()
+
         daily_trend = []
         for i in range(6, -1, -1):
             day = date.today() - timedelta(days=i)
             day_str = day.strftime('%Y-%m-%d')
             day_label = day.strftime('%d %b')
 
-            day_jobs = CustomerJob.query.filter(CustomerJob.date == day_str).all()
-            day_income = sum(job.total_amount for job in day_jobs)
-            day_job_expenses = sum(job.total_expenses for job in day_jobs)
-            day_driver_payments = sum(p.amount for p in DriverPayment.query.filter(DriverPayment.date == day_str).all())
-            day_fuel = sum(f.total_cost for f in FuelEntry.query.filter(FuelEntry.date == day_str).all())
+            day_jobs_list = [j for j in trend_jobs if j.date == day_str]
+            day_payments_list = [p for p in trend_payments if p.date == day_str]
+            day_fuels_list = [f for f in trend_fuels if f.date == day_str]
+
+            day_income = sum(job.total_amount for job in day_jobs_list)
+            day_job_expenses = sum(job.total_expenses for job in day_jobs_list)
+            day_driver_payments = sum(p.amount for p in day_payments_list)
+            day_fuel = sum(f.total_cost for f in day_fuels_list)
+
             day_expenses = day_job_expenses + day_driver_payments + day_fuel
             day_profit = day_income - day_expenses
 

@@ -37,13 +37,15 @@ api.interceptors.response.use(
   }
 );
 
-// Keep-alive ping: hits /auth/me every 10 minutes to prevent Render cold starts
+// Keep-alive ping: hits /auth/me every 4 minutes to prevent Render cold starts (15 min sleep limit)
 const startKeepAlive = () => {
   const token = localStorage.getItem('token');
   if (!token) return;
   api.get('/auth/me').catch(() => {}); // silent ping
 };
 
-setInterval(startKeepAlive, 10 * 60 * 1000); // every 10 minutes
+// Ping every 4 minutes (240,000 ms) and run once immediately
+startKeepAlive();
+setInterval(startKeepAlive, 4 * 60 * 1000);
 
 export default api;
